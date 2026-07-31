@@ -1,0 +1,35 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.7.5",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.access_logs",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "access_logs",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "planguard-access-logs",
+          "force_destroy": false
+        },
+        "after_unknown": { "id": true, "arn": true }
+      }
+    },
+    {
+      "address": "data.aws_ami.al2023",
+      "mode": "data",
+      "type": "aws_ami",
+      "name": "al2023",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["read"],
+        "before": null,
+        "after": { "id": "ami-0123456789abcdef0" },
+        "after_unknown": {}
+      }
+    }
+  ]
+}

@@ -2,19 +2,24 @@
   "name": "planguard",
   "private": true,
   "version": "0.0.0",
-  "description": "PlanGuard AI agent harness (type-chain based).",
+  "description": "PlanGuard monorepo — deterministic analysis packages plus the type-chain agent harness.",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
+  "workspaces": ["packages/*"],
   "scripts": {
+    "prebuild": "npm run build --workspaces --if-present",
     "build": "tsc --project tsconfig.json",
+    "pretypecheck": "npm run build --workspaces --if-present",
     "typecheck": "tsc --noEmit",
+    "test": "npm run test --workspaces --if-present",
     "harness": "npm run build && node dist/.agents/harness.js"
   },
   "dependencies": {
     "@langchain/anthropic": "^1.5.2",
     "@langchain/core": "^1.2.4",
+    "@planguard/schemas": "*",
     "@theorvane/type-chain": "^0.1.1",
     "langchain": "^1.5.4",
     "zod": "^4.4.3"
