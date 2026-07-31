@@ -67,9 +67,11 @@ Dev-tooling only — guards the AI coding agent working on this repo, not PlanGu
 - `.claude/settings.json` — allow-lists the harness's own commands (`npm run harness`, `git
   status`, `gh pr *`, ...) and denies reading `.env`, `*.pem`, `*.tfstate`, `*.tfvars`, and
   `.aws/credentials` outright.
-- `.claude/hooks/block-secrets.sh` — a `PreToolUse(Bash)` hook that blocks `cat`/`curl`/`git add
-  -f` etc. against those same secret and Terraform-state files, plus root/home `rm -rf`. This
-  exists because PlanGuard's own product handles exactly this kind of sensitive data (see
+- `.claude/hooks/block-secrets.sh` — a `PreToolUse(Bash)` hook that tokenizes commands with
+  `python3`/`shlex` (not raw regex, to resist `rm -r -f`/`git add .`-style bypasses) and blocks
+  destructive `rm -r`, exposure (`cat`/`curl`/...) of `.env`/`*.pem`/`id_rsa*`/`*.tfstate`/
+  `*.tfvars`/`.aws/credentials`, and `git add` that would actually stage one. This exists because
+  PlanGuard's own product handles exactly this kind of sensitive data (see
   [docs/PRODUCT_PLAN.md #15](docs/PRODUCT_PLAN.md#15-보안-및-개인정보-보호)) — the repo enforces
   on itself what the product promises to enforce for users.
 - `.claude/agents/risk-boundary-reviewer.md` — a review-only subagent for the rule above: run it
