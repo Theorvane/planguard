@@ -1,14 +1,6 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": ["ES2022", "ESNext.Decorators"],
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "experimentalDecorators": false,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
     "outDir": "dist",
     "rootDir": "."
   },

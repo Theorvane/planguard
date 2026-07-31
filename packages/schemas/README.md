@@ -4,5 +4,6 @@ Installation, Repository, Review, ResourceChange, Finding, Exception, Subscripti
 `apps/*`와 `.agents/types.ts`가 이 패키지를 참조하게 된다.
 
 - 스펙: [docs/PRODUCT_PLAN.md #14 데이터 모델](../../docs/PRODUCT_PLAN.md#14-데이터-모델)
-- 상태: 미구현. 현재는 `.agents/types.ts`에 임시로 `ReviewContext` 타입이 로컬 정의되어 있음 — 이 패키지가
-  생기면 그쪽으로 옮긴다.
+- 상태: `ResourceChange`/`ChangedField`/`Finding`/`HistoricalRiskMatch`/`ReviewContext` 구현됨.
+  `.agents/types.ts`는 이제 이 패키지를 재수출만 한다. `packages/terraform-parser`가 첫 소비자.
+  Installation/Repository/Review/Exception/Subscription 엔터티는 아직 없음 — Phase 2(GitHub App)에서 추가.

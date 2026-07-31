@@ -1,0 +1,23 @@
+{
+  "name": "@planguard/schemas",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Shared PlanGuard types (docs/PRODUCT_PLAN.md #14 데이터 모델).",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
