@@ -83,6 +83,17 @@ Dev-tooling only — guards the AI coding agent working on this repo, not PlanGu
   after any change to `.agents/*.ts` to check no `@Tool()` method or prompt string computes a
   severity, score, or pass/fail itself.
 
+## Git workflow
+
+- No commits directly on `main`. Every change: open a GitHub issue first, branch off `main` as
+  `<type>/<issue-number>-<short-slug>` (e.g. `feat/9-cost-estimator`), open a PR against `main`
+  with `Closes #<issue-number>` in the body, and merge via `gh pr merge --merge --delete-branch`.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
+  `<type>: <subject>`, imperative mood, no period. Types used in this repo: `feat`, `fix`,
+  `docs`, `chore`, `refactor`, `test`. Body explains *why* when it isn't obvious; footer carries
+  `Closes #<issue-number>`.
+- Merge, don't rebase/squash, once a PR is up — keeps `git log` matching the PR history 1:1.
+
 ## Conventions
 
 - TypeScript, ESM (`"type": "module"`), standard (Stage 3) decorators —
