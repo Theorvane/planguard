@@ -1,49 +1,145 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash) hook: block commands that would expose or exfiltrate secrets
-# this repo handles — .env, cloud credentials, and Terraform state/plan files,
-# which can contain sensitive_values/before_sensitive/after_sensitive in plaintext
-# (see docs/PRODUCT_PLAN.md #15). exit 2 blocks the command and shows stderr to the agent.
-set -euo pipefail
+# PreToolUse(Bash) hook: block destructive deletes and secret-file exposure.
+# exit 2 + stderr blocks the command; Claude Code reads the reason.
+#
+# Regex alone is easy to bypass (`rm -r -f`, `rm --recursive --force`, `git add .`),
+# so this tokenizes with python3 + shlex and inspects flags/targets/subcommands
+# instead of pattern-matching the raw string.
+#
+# File types covered: .env (this repo's own secrets) plus Terraform/cloud
+# credentials this product's users hand us — .pem, id_rsa*, *.tfstate, *.tfvars,
+# and .aws/credentials — since terraform.tfstate and plan JSON can carry
+# sensitive_values in plaintext (docs/PRODUCT_PLAN.md #15).
 
-input=$(cat)
+set -uo pipefail
 
-cmd=$(printf '%s' "$input" | node -e '
-let d="";
-process.stdin.on("data", c => d += c);
-process.stdin.on("end", () => {
-  try { process.stdout.write(JSON.parse(d).tool_input?.command || ""); }
-  catch { process.stdout.write(""); }
-});
-' 2>/dev/null || true)
+exec python3 -c '
+import json, sys, shlex, os, re, subprocess
 
-[ -z "$cmd" ] && exit 0
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
 
-block() {
-  echo "차단됨: $1" >&2
-  echo "이 명령은 block-secrets.sh 훅에 의해 막혔습니다. 의도한 작업이면 사람이 직접 실행하세요." >&2
-  exit 2
-}
+cmd = (data.get("tool_input", {}) or {}).get("command", "") or ""
+if not cmd.strip():
+    sys.exit(0)
 
-SECRET_PATTERN='(\.env($|[^.a-zA-Z0-9])|\.env\.[a-z]+|id_rsa|id_ed25519|\.pem($|[^a-zA-Z])|\.tfstate($|[^a-zA-Z])|\.tfvars($|[^a-zA-Z])|credentials($|[^a-zA-Z])|\.aws/credentials)'
+def block(msg):
+    sys.stderr.write("block-secrets: 차단됨 — " + msg + "\n")
+    sys.exit(2)
 
-# 1) root/home 대상 파괴적 삭제 (rm -rf 류)
-if printf '%s' "$cmd" | grep -Eq 'rm[[:space:]]+((-[a-zA-Z]+|--(recursive|force|no-preserve-root))[[:space:]]+)*(-[a-zA-Z]*[rRfF][a-zA-Z]*|--(recursive|force))[[:space:]]+(/|~|\$HOME|/\*|\.\*)([[:space:]]|$)'; then
-  block "루트/홈 대상 파괴적 삭제(rm -rf)"
-fi
+segments = re.split(r"[;\n]|&&|\|\||\||&", cmd)
 
-# 2) .env / cloud credentials / terraform state·tfvars 내용 출력
-if printf '%s' "$cmd" | grep -Eq "((cat|less|more|head|tail|xxd|od|base64|strings|grep|egrep|sed|awk|nl|tac)[[:space:]]+[^|;&]*|<[[:space:]]*)$SECRET_PATTERN"; then
-  block "시크릿/자격증명/Terraform state 파일 내용 출력 시도"
-fi
+BROAD_TARGETS = {"/", "~", "$HOME", ".", "./", "*", "./*", "~/", "/*", ".."}
+ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
-# 3) .env 또는 tfstate를 git에 강제 추가
-if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+add[[:space:]]+[^|;&]*(-f|--force)[^|;&]*(\.env|\.tfstate|\.tfvars)'; then
-  block "시크릿 파일 강제 git add"
-fi
+ENV_RE = re.compile(r"^\.env(\..+)?$")
+SECRET_NAME_RE = re.compile(
+    r"^(\.env(\..+)?|id_rsa(\.[A-Za-z0-9]+)?|id_ed25519(\.[A-Za-z0-9]+)?|"
+    r".+\.pem|.+\.tfstate|.+\.tfstate\.backup|.+\.tfvars|credentials)$"
+)
 
-# 4) 원격으로 시크릿 유출 (curl/wget에 .env·tfstate·credentials 첨부)
-if printf '%s' "$cmd" | grep -Eq "(curl|wget)[[:space:]]+[^|;&]*$SECRET_PATTERN"; then
-  block "시크릿/state 파일을 원격으로 전송 시도"
-fi
+def is_env_file(arg):
+    base = os.path.basename(arg)
+    return bool(ENV_RE.fullmatch(base)) and base != ".env.example"
 
-exit 0
+def is_secret_file(arg):
+    base = os.path.basename(arg)
+    if base == ".env.example":
+        return False
+    if SECRET_NAME_RE.fullmatch(base):
+        return True
+    return arg.replace(os.sep, "/").rstrip("/").endswith(".aws/credentials")
+
+def dangerous_target(t):
+    tt = t.rstrip("/")
+    return (
+        t in BROAD_TARGETS
+        or tt in ("", "/", "~", "$HOME", ".", "..")
+        or t.startswith(("/", "~", "$HOME"))
+        or "*" in t
+    )
+
+for seg in segments:
+    try:
+        tokens = shlex.split(seg)
+    except ValueError:
+        tokens = seg.split()
+    if not tokens:
+        continue
+
+    idx = 0
+    while idx < len(tokens):
+        t = tokens[idx]
+        if t in ("sudo", "env") or ASSIGN_RE.match(t):
+            idx += 1
+            continue
+        break
+    if idx >= len(tokens):
+        continue
+
+    name = os.path.basename(tokens[idx])
+    args = tokens[idx + 1:]
+
+    # 1) destructive rm (combined/separate flags, long options, wildcard targets)
+    if name == "rm":
+        recursive = force = False
+        targets = []
+        for a in args:
+            if a == "--":
+                continue
+            if a == "--recursive":
+                recursive = True
+            elif a == "--force":
+                force = True
+            elif a.startswith("--"):
+                pass
+            elif a.startswith("-") and len(a) > 1:
+                flags = a[1:]
+                if "r" in flags or "R" in flags:
+                    recursive = True
+                if "f" in flags:
+                    force = True
+            else:
+                targets.append(a)
+        if recursive and any(dangerous_target(x) for x in targets):
+            block("위험한 rm -r 대상(루트/홈/현재 디렉토리/와일드카드). 삭제 대상을 구체적 경로로 좁혀라.")
+
+    # 2) secret/credential/terraform-state file content exposure
+    if name in ("cat", "less", "more", "head", "tail", "cp", "scp",
+                "curl", "wget", "nc", "xxd", "od", "base64", "strings", "bat", "grep"):
+        if any(is_secret_file(a) for a in args if not a.startswith("-")):
+            block("시크릿/자격증명/Terraform state 파일 내용 노출 시도. 커밋·출력·전송 금지.")
+
+    # 3) git add staging a secret file (explicit, broad, or forced)
+    if name == "git":
+        VALUE_OPTS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix")
+        gi = 0
+        while gi < len(args) and args[gi].startswith("-"):
+            gi += 2 if args[gi] in VALUE_OPTS else 1
+        subcmd = args[gi] if gi < len(args) else None
+        add_args = args[gi + 1:]
+
+        if subcmd == "add":
+            positionals = [a for a in add_args if not a.startswith("-")]
+            force_add = any(a in ("-f", "--force") for a in add_args)
+            explicit_secret = any(is_secret_file(a) for a in positionals)
+            broad = any(a in (".", "./", "-A", "--all", "-u", "--update", "*") for a in add_args)
+
+            if explicit_secret:
+                block("시크릿 파일을 git에 추가하려는 시도. .env/.tfstate/.tfvars/자격증명은 커밋 금지.")
+            if broad or force_add:
+                status_cmd = ["git", "status", "--porcelain"]
+                if force_add:
+                    status_cmd.append("--ignored")
+                status_cmd += ["--", ".env", "*.tfstate", "*.tfvars", ".aws/credentials"]
+                try:
+                    out = subprocess.run(status_cmd, capture_output=True, text=True, timeout=5)
+                    if out.stdout.strip():
+                        block("시크릿 파일이 스테이징 대상에 포함될 수 있음. 대상을 구체적 경로로 좁혀라.")
+                except Exception:
+                    pass
+
+sys.exit(0)
+'
