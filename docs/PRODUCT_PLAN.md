@@ -20,7 +20,7 @@
 * GitHub Marketplace 배포
 * SaaS 웹 대시보드
 * Terraform 분석용 GitHub Action
-* LangGraph 기반 AI 리뷰 워크플로
+* type-chain 기반 AI 리뷰 워크플로
 
 GitHub 밖에서 장시간 분석을 수행하고 저장소별 권한과 웹훅을 사용해야 하므로, PlanGuard는 단순 GitHub Action보다 GitHub App이 중심이 되는 구조가 적합하다. GitHub 역시 주된 기능이 GitHub 외부에서 실행되거나 더 긴 실행 시간과 세밀한 권한이 필요한 서비스에는 GitHub App을 권장한다.
 
@@ -533,7 +533,7 @@ Analysis Worker
  ├─ Checkov Runner
  ├─ Cost Estimator
  ├─ Dependency Analyzer
- └─ LangGraph Agent
+ └─ type-chain Agent
           │
           ▼
 Storage
@@ -645,7 +645,7 @@ GitHub App은 기본적으로 권한이 없으며 필요한 권한만 명시적�
 
 ---
 
-# 11. LangGraph 워크플로
+# 11. type-chain 워크플로
 
 ```text
 START
@@ -1194,7 +1194,7 @@ GitHub Marketplace listing에는 제품 설명과 가이드에 맞는 이미지�
 
 ## Phase 3: Agent Workflow
 
-* LangGraph 상태 모델
+* type-chain 상태 모델
 * 병렬 분석
 * AI 구조화 출력
 * 재시도·타임아웃
@@ -1315,8 +1315,8 @@ Core API
 Spring Boot 또는 NestJS
 
 Agent Worker
-Python + FastAPI
-LangChain + LangGraph
+Node.js + TypeScript
+type-chain (LangChain JS 기반 decorator-first 타입세이프 에이전트 레이어)
 
 Database
 PostgreSQL + pgvector
@@ -1331,13 +1331,13 @@ Authentication
 GitHub App + GitHub OAuth
 
 Observability
-OpenTelemetry + LangSmith
+OpenTelemetry + LangSmith (LangChain JS 트레이싱 호환)
 
 Infrastructure
 Docker + Terraform + AWS
 ```
 
-빠른 출시가 목표라면 Core API까지 Python/FastAPI로 통합하고, 이후 서비스가 성장할 때 분리하는 편이 낫다.
+빠른 출시가 목표라면 Core API까지 NestJS로 통합해 Agent Worker와 같은 TypeScript 런타임을 공유하고, 이후 서비스가 성장할 때 분리하는 편이 낫다.
 
 ---
 
