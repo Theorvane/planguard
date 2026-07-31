@@ -2,6 +2,7 @@
   "resourceChanges": [
     {
       "resource": "aws_db_instance.production",
+      "resourceType": "aws_db_instance",
       "action": "update",
       "changedFields": [
         { "field": "multi_az", "before": true, "after": false }

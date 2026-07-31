@@ -21,9 +21,14 @@ Concretely, when adding a tool or agent under `.agents/`:
 - Any agent-generated claim that isn't a direct pass-through of a tool result must be labeled
   "Needs verification" in the output, per [docs/PRODUCT_PLAN.md #6.2](docs/PRODUCT_PLAN.md#62-security-review).
 
-Two similarly-named directories, two different jobs: `.agents/` is PlanGuard's own product
-code (the type-chain agent). `.claude/` is dev tooling for AI coding agents working *on* this
-repo (hooks, subagents) — never runtime code, never shipped.
+Three directories, three different jobs: `packages/*` is deterministic analysis code (the actual
+source of risk scores and findings). `.agents/` is PlanGuard's own product AI code (the
+type-chain agent that explains what `packages/*` already computed). `.claude/` is dev tooling for
+AI coding agents working *on* this repo (hooks, subagents) — never runtime code, never shipped.
+
+This is an npm workspace (`packages/*`). From the repo root: `npm run typecheck` and `npm run
+test` build and check every workspace package before checking/testing the root harness. A single
+package: `npm run test -w @planguard/terraform-parser`.
 
 ## Agent harness (`.agents/`)
 

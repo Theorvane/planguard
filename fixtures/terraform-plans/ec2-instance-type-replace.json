@@ -1,0 +1,27 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.7.5",
+  "resource_changes": [
+    {
+      "address": "aws_instance.web",
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "web",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete", "create"],
+        "before": {
+          "id": "i-0abc123",
+          "instance_type": "t3.medium",
+          "availability_zone": "us-east-1a"
+        },
+        "after": {
+          "id": null,
+          "instance_type": "t3.medium",
+          "availability_zone": "us-east-1b"
+        },
+        "after_unknown": { "id": true, "instance_type": false, "availability_zone": false }
+      }
+    }
+  ]
+}
