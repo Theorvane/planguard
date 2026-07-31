@@ -1,0 +1,20 @@
+{
+  "name": "PlanGuard",
+  "url": "https://github.com/sjungwon03/planguard",
+  "description": "AI-powered Terraform change reviews for security, availability, cost, and deployment risk.",
+  "public": true,
+  "default_permissions": {
+    "metadata": "read",
+    "contents": "read",
+    "pull_requests": "read",
+    "checks": "write",
+    "actions": "read"
+  },
+  "default_events": [
+    "installation",
+    "installation_repositories",
+    "pull_request",
+    "push",
+    "check_run"
+  ]
+}
