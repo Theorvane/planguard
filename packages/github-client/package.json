@@ -1,0 +1,29 @@
+{
+  "name": "@planguard/github-client",
+  "private": true,
+  "version": "0.0.0",
+  "description": "GitHub App auth, webhook signature verification, and Check Run client (docs/PRODUCT_PLAN.md #10, #6.7).",
+  "type": "module",
+  "types": "./dist/src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@octokit/auth-app": "^8.2.0",
+    "@octokit/webhooks-methods": "^6.0.0",
+    "@planguard/schemas": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
