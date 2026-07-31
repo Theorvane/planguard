@@ -1,0 +1,27 @@
+{
+  "name": "@planguard/risk-engine",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Deterministic weighted risk scoring for Terraform changes (docs/PRODUCT_PLAN.md #6.6).",
+  "type": "module",
+  "types": "./dist/src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@planguard/schemas": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

@@ -44,6 +44,12 @@ export interface HistoricalRiskMatch {
   readonly summary: string;
 }
 
+/** docs/PRODUCT_PLAN.md #6.6 등급. */
+export type RiskLevel = "Low" | "Moderate" | "High" | "Critical";
+
+/** GitHub Check Run conclusion. Shared so risk-engine and github-client cannot drift. */
+export type CheckConclusion = "success" | "failure" | "neutral" | "action_required";
+
 export interface ReviewContext {
   readonly resourceChanges: ReadonlyArray<ResourceChange>;
   readonly securityFindings: ReadonlyArray<Finding>;
