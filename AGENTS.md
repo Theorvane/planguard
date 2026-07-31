@@ -21,6 +21,10 @@ Concretely, when adding a tool or agent under `.agents/`:
 - Any agent-generated claim that isn't a direct pass-through of a tool result must be labeled
   "Needs verification" in the output, per [docs/PRODUCT_PLAN.md #6.2](docs/PRODUCT_PLAN.md#62-security-review).
 
+Two similarly-named directories, two different jobs: `.agents/` is PlanGuard's own product
+code (the type-chain agent). `.claude/` is dev tooling for AI coding agents working *on* this
+repo (hooks, subagents) — never runtime code, never shipped.
+
 ## Agent harness (`.agents/`)
 
 This directory holds the [type-chain](https://github.com/Theorvane/type-chain)
@@ -55,6 +59,22 @@ copy `.env.example` to `.env`, set `PLANGUARD_MODEL` (a LangChain init-string li
    compute anything inside the tool.
 3. Update `fixtures/review-fixture.json` with a representative example.
 4. Run `npm run typecheck && npm run harness` before committing.
+
+## Claude Code harness (`.claude/`)
+
+Dev-tooling only — guards the AI coding agent working on this repo, not PlanGuard's product code.
+
+- `.claude/settings.json` — allow-lists the harness's own commands (`npm run harness`, `git
+  status`, `gh pr *`, ...) and denies reading `.env`, `*.pem`, `*.tfstate`, `*.tfvars`, and
+  `.aws/credentials` outright.
+- `.claude/hooks/block-secrets.sh` — a `PreToolUse(Bash)` hook that blocks `cat`/`curl`/`git add
+  -f` etc. against those same secret and Terraform-state files, plus root/home `rm -rf`. This
+  exists because PlanGuard's own product handles exactly this kind of sensitive data (see
+  [docs/PRODUCT_PLAN.md #15](docs/PRODUCT_PLAN.md#15-보안-및-개인정보-보호)) — the repo enforces
+  on itself what the product promises to enforce for users.
+- `.claude/agents/risk-boundary-reviewer.md` — a review-only subagent for the rule above: run it
+  after any change to `.agents/*.ts` to check no `@Tool()` method or prompt string computes a
+  severity, score, or pass/fail itself.
 
 ## Conventions
 
