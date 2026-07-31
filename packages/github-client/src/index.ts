@@ -8,7 +8,6 @@ export {
   createQueuedCheckRun,
 } from "./check-run.js";
 export type {
-  CheckConclusion,
   CheckRunSummaryInput,
   CompleteCheckRunInput,
   CreateQueuedCheckRunInput,

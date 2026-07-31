@@ -1,8 +1,12 @@
-import type { Finding, ResourceAction, ResourceChange } from "@planguard/schemas";
+import type {
+  CheckConclusion,
+  Finding,
+  ResourceAction,
+  ResourceChange,
+  RiskLevel,
+} from "@planguard/schemas";
 
 export const CHECK_NAME = "PlanGuard / Infrastructure Review";
-
-export type CheckConclusion = "success" | "failure" | "neutral" | "action_required";
 
 /** Duck-typed Octokit — accepts a real Octokit instance or a test double, nothing more. */
 export interface RequestClient {
@@ -67,7 +71,7 @@ const ACTION_LABELS: ReadonlyArray<readonly [ResourceAction, string]> = [
 ];
 
 export interface CheckRunSummaryInput {
-  readonly riskLevel: "Low" | "Moderate" | "High" | "Critical";
+  readonly riskLevel: RiskLevel;
   readonly decision: string;
   readonly resourceChanges: ReadonlyArray<ResourceChange>;
   readonly securityFindings: ReadonlyArray<Finding>;
