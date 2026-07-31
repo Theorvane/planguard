@@ -7,7 +7,7 @@
   "engines": {
     "node": ">=20"
   },
-  "workspaces": ["packages/*"],
+  "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "prebuild": "npm run build --workspaces --if-present",
     "build": "tsc --project tsconfig.json",
