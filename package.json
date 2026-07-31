@@ -1,0 +1,25 @@
+{
+  "name": "planguard",
+  "private": true,
+  "version": "0.0.0",
+  "description": "PlanGuard AI agent harness (type-chain based).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "harness": "npm run build && node dist/.agents/harness.js"
+  },
+  "dependencies": {
+    "@langchain/anthropic": "^1.5.2",
+    "@langchain/core": "^1.2.4",
+    "@theorvane/type-chain": "^0.1.1",
+    "langchain": "^1.5.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

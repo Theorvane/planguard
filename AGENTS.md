@@ -1,0 +1,66 @@
+# AGENTS.md
+
+Instructions for AI coding agents (and humans) working in this repository.
+
+## What this repo is
+
+PlanGuard reviews Terraform pull requests and publishes GitHub Checks covering security,
+availability, cost, and deployment risk. Full product spec: [docs/PRODUCT_PLAN.md](docs/PRODUCT_PLAN.md).
+
+## The one rule that overrides everything else
+
+**Risk scores, policy pass/fail, and cost numbers are computed by deterministic code, never by an LLM.**
+LLMs may only summarize, explain, and connect findings that deterministic code already produced.
+See [docs/PRODUCT_PLAN.md #3.1](docs/PRODUCT_PLAN.md#31-ai가-아닌-근거가-중심) before adding any
+AI-generated value to a code path that affects the Check verdict.
+
+Concretely, when adding a tool or agent under `.agents/`:
+- A `@Tool()` method may only *read* and return data that was already computed elsewhere
+  (parsed plan, Checkov output, rule-engine score, cost estimate). It must not itself decide
+  severity, risk grade, or pass/fail.
+- Any agent-generated claim that isn't a direct pass-through of a tool result must be labeled
+  "Needs verification" in the output, per [docs/PRODUCT_PLAN.md #6.2](docs/PRODUCT_PLAN.md#62-security-review).
+
+## Agent harness (`.agents/`)
+
+This directory holds the [type-chain](https://github.com/Theorvane/type-chain)
+(`@theorvane/type-chain`, a decorator-first authoring layer over LangChain JS) agent(s) used for
+the one AI-reasoning node in the review pipeline (`generate_explanation` in
+[docs/PRODUCT_PLAN.md #11](docs/PRODUCT_PLAN.md#11-type-chain-워크플로)). Everything upstream of
+that node (plan parsing, Checkov, policy checks, risk scoring) is plain deterministic TypeScript
+and does not belong in `.agents/`.
+
+- `types.ts` — shared `ReviewContext` shape (resource changes + findings by category).
+- `review-explanation-agent.ts` — the `@Agent()`-decorated class; each `@Tool()` method exposes
+  one category of deterministic findings to the model.
+- `harness.ts` — runnable entry point. Wires the agent, prints registered tool names, and (only
+  if `PLANGUARD_MODEL` is set) invokes it live against `fixtures/review-fixture.json`.
+
+Run it:
+
+```bash
+npm install
+npm run typecheck
+npm run harness
+```
+
+`npm run harness` always verifies tool wiring without any API key. To actually invoke the model,
+copy `.env.example` to `.env`, set `PLANGUARD_MODEL` (a LangChain init-string like
+`anthropic:claude-sonnet-5`) and the matching provider API key, then `export` them before running.
+
+## Adding a new analysis category
+
+1. Extend `ReviewContext` in `.agents/types.ts`.
+2. Add a `@Tool()` method to `review-explanation-agent.ts` that returns the new field — do not
+   compute anything inside the tool.
+3. Update `fixtures/review-fixture.json` with a representative example.
+4. Run `npm run typecheck && npm run harness` before committing.
+
+## Conventions
+
+- TypeScript, ESM (`"type": "module"`), standard (Stage 3) decorators —
+  `experimentalDecorators` must stay `false` (type-chain requirement).
+- Don't commit `dist/`, `node_modules/`, or `.env` (see `.gitignore`).
+- Prefer editing existing files under `.agents/` over creating new top-level agent
+  directories; the repo layout in [docs/PRODUCT_PLAN.md #22](docs/PRODUCT_PLAN.md#22-프로젝트-저장소-구성)
+  is the target shape once this grows beyond one agent.

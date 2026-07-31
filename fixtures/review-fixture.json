@@ -1,0 +1,48 @@
+{
+  "resourceChanges": [
+    {
+      "resource": "aws_db_instance.production",
+      "action": "update",
+      "changedFields": [
+        { "field": "multi_az", "before": true, "after": false }
+      ],
+      "replacementRequired": false
+    }
+  ],
+  "securityFindings": [
+    {
+      "category": "security",
+      "severity": "high",
+      "title": "SSH access exposed to the internet",
+      "evidence": "aws_security_group.bastion port 22 changes from 10.0.0.0/8 to 0.0.0.0/0.",
+      "source": "checkov:CKV_AWS_24",
+      "recommendation": "Restrict access to a VPN or trusted administrative CIDR."
+    }
+  ],
+  "availabilityFindings": [
+    {
+      "category": "availability",
+      "severity": "critical",
+      "title": "RDS Multi-AZ is being disabled",
+      "evidence": "aws_db_instance.production.multi_az changes from true to false.",
+      "source": "planguard:PG-AVAILABILITY-RDS-MULTI-AZ",
+      "recommendation": "Keep multi_az enabled for production databases to retain automatic failover."
+    }
+  ],
+  "costFindings": [
+    {
+      "category": "cost",
+      "severity": "low",
+      "title": "Estimated monthly change: -$121",
+      "evidence": "Disabling Multi-AZ removes the standby replica cost for aws_db_instance.production.",
+      "source": "planguard:cost-estimator",
+      "recommendation": "Confirm the cost savings are worth the reduced availability guarantee."
+    }
+  ],
+  "historicalRiskMatches": [
+    {
+      "pullRequest": "#184",
+      "summary": "A similar capacity reduction in PR #184 caused CPU saturation."
+    }
+  ]
+}
