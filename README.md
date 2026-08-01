@@ -21,7 +21,7 @@ policies/aws     PlanGuard 기본 AWS 정책
 fixtures/        terraform-plans (예정) · review-fixture.json (.agents/ 하네스용)
 docs/            installation · security · marketplace
 infrastructure/  PlanGuard 자체 서비스 배포용 Terraform
-.agents/         type-chain 기반 AI 리뷰 에이전트 하네스 (실행 가능, npm run harness)
+.agents/         제품 AI 리뷰 하네스와 개발용 안전 하네스 (npm run harness 실행 가능)
 ```
 
 ## 제품 경계

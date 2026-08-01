@@ -1,6 +1,6 @@
 ---
 name: risk-boundary-reviewer
-description: Use after any change under .agents/ or a future risk-scoring package to check that LLM-facing code never computes severity, risk grade, or pass/fail itself — only reads deterministic results. Review only, no edits.
+description: Use after any change to product-agent TypeScript files under .agents/ or a future risk-scoring package to check that LLM-facing code never computes severity, risk grade, or pass/fail itself — only reads deterministic results. Review only, no edits.
 tools: Read, Grep, Glob
 ---
 
