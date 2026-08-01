@@ -2,35 +2,38 @@
 
 > Understand infrastructure changes before they reach production.
 
-Terraform Pull Request의 변경사항을 분석하여 보안, 가용성, 비용, 운영 위험을 검토하고 GitHub Check로 승인 판단을 제공하는 AI 인프라 리뷰 앱.
+An AI infrastructure review app that analyzes Terraform pull request changes for security,
+availability, cost, and operational risk, then publishes a GitHub Check to support approval decisions.
 
-## 문서
+## Documentation
 
-* [제품 기획안](docs/PRODUCT_PLAN.md)
-* [AGENTS.md](AGENTS.md) — 이 저장소에서 작업하는 AI 코딩 에이전트용 가이드
+* [Product plan](docs/PRODUCT_PLAN.md) (Korean)
+* [AGENTS.md](AGENTS.md) — guidance for AI coding agents working in this repository
 
-## 저장소 구조
+## Repository layout
 
-[섹션 22](docs/PRODUCT_PLAN.md#22-프로젝트-저장소-구성) 기준 스켈레톤. 각 폴더의 `README.md`에 스펙 링크와 구현 상태가 있다.
+This skeleton follows the repository layout defined in the [product plan](docs/PRODUCT_PLAN.md).
+Each directory's `README.md` links to the relevant specification and implementation status.
 
 ```text
-apps/            web · api · worker (모두 미구현 — worker 프로토타입은 .agents/ 참고)
+apps/            web · api · worker (not yet implemented; see .agents/ for the worker prototype)
 packages/        terraform-parser · policy-engine · risk-engine · github-client · schemas
-actions/analyze  사용자 CI에서 terraform plan을 생성해 업로드하는 GitHub Action
-policies/aws     PlanGuard 기본 AWS 정책
-fixtures/        terraform-plans (예정) · review-fixture.json (.agents/ 하네스용)
+actions/analyze  GitHub Action that creates and uploads a Terraform plan from user CI
+policies/aws     Default PlanGuard AWS policies
+fixtures/        terraform plans (planned) · review-fixture.json (for the .agents/ harness)
 docs/            installation · security · marketplace
-infrastructure/  PlanGuard 자체 서비스 배포용 Terraform
-.agents/         type-chain 기반 AI 리뷰 에이전트 하네스 (실행 가능, npm run harness)
+infrastructure/  Terraform for deploying PlanGuard itself
+.agents/         Type-chain AI review-agent harness (runnable with npm run harness)
 ```
 
-## 제품 경계
+## Product boundary
 
 ```text
-PlanGuard는 Terraform을 대신 적용하지 않는다.
-PlanGuard는 사람이 안전하게 승인하도록 돕는다.
+PlanGuard does not apply Terraform on your behalf.
+PlanGuard helps people approve infrastructure changes safely.
 ```
 
-## 현재 상태
+## Current status
 
-기획 단계. 저장소 구조와 구현은 [개발 단계](docs/PRODUCT_PLAN.md#20-개발-단계)를 따라 진행 예정.
+Planning stage. The repository structure and implementation will follow the development phases in
+the [product plan](docs/PRODUCT_PLAN.md).
