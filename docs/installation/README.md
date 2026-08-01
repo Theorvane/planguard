@@ -19,7 +19,7 @@
 2. Webhook URL을 PlanGuard API의 `/webhooks/github`로 지정하고 **Webhook secret**을 생성한다.
 3. 생성 후 **App ID**와 **private key(.pem)** 를 발급받는다.
 4. 이 값들을 `.env`에 넣는다 — `.pem`과 `.env`는 절대 커밋하지 않는다
-   (`.gitignore`와 `.claude/hooks/block-secrets.sh`가 막는다).
+   (`.gitignore`와 `.agents/hooks/block-secrets.sh`가 막는다).
 
 ```bash
 PLANGUARD_GITHUB_APP_ID=

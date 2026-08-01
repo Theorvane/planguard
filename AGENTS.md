@@ -21,10 +21,10 @@ Concretely, when adding a tool or agent under `.agents/`:
 - Any agent-generated claim that isn't a direct pass-through of a tool result must be labeled
   "Needs verification" in the output, per [docs/PRODUCT_PLAN.md #6.2](docs/PRODUCT_PLAN.md#62-security-review).
 
-Three directories, three different jobs: `packages/*` is deterministic analysis code (the actual
-source of risk scores and findings). `.agents/` is PlanGuard's own product AI code (the
-type-chain agent that explains what `packages/*` already computed). `.claude/` is dev tooling for
-AI coding agents working *on* this repo (hooks, subagents) — never runtime code, never shipped.
+Two directories, two different jobs: `packages/*` is deterministic analysis code (the actual
+source of risk scores and findings). `.agents/` contains both PlanGuard's product AI code (the
+type-chain agent that explains what `packages/*` already computed) and development-only guardrails.
+The development harness is never runtime code and is never shipped.
 
 This is an npm workspace (`packages/*`). From the repo root: `npm run typecheck` and `npm run
 test` build and check every workspace package before checking/testing the root harness. A single
@@ -65,23 +65,30 @@ copy `.env.example` to `.env`, set `PLANGUARD_MODEL` (a LangChain init-string li
 3. Update `fixtures/review-fixture.json` with a representative example.
 4. Run `npm run typecheck && npm run harness` before committing.
 
-## Claude Code harness (`.claude/`)
+## Development harness (`.agents/`)
 
-Dev-tooling only — guards the AI coding agent working on this repo, not PlanGuard's product code.
+Dev-tooling only — guards AI coding agents working on this repo, not PlanGuard's product code.
 
-- `.claude/settings.json` — allow-lists the harness's own commands (`npm run harness`, `git
+- `claude-code-settings.json` — Claude Code settings template that allow-lists the harness's own
+  commands (`npm run harness`, `git
   status`, `gh pr *`, ...) and denies reading `.env`, `*.pem`, `*.tfstate`, `*.tfvars`, and
-  `.aws/credentials` outright.
-- `.claude/hooks/block-secrets.sh` — a `PreToolUse(Bash)` hook that tokenizes commands with
+  `.aws/credentials` outright. To activate it in Claude Code, install this file as that tool's
+  project settings file; its hook already points at the canonical `.agents/` script.
+- `hooks/block-secrets.sh` — a `PreToolUse(Bash)` hook that tokenizes commands with
   `python3`/`shlex` (not raw regex, to resist `rm -r -f`/`git add .`-style bypasses) and blocks
   destructive `rm -r`, exposure (`cat`/`curl`/...) of `.env`/`*.pem`/`id_rsa*`/`*.tfstate`/
   `*.tfvars`/`.aws/credentials`, and `git add` that would actually stage one. This exists because
   PlanGuard's own product handles exactly this kind of sensitive data (see
   [docs/PRODUCT_PLAN.md #15](docs/PRODUCT_PLAN.md#15-보안-및-개인정보-보호)) — the repo enforces
   on itself what the product promises to enforce for users.
-- `.claude/agents/risk-boundary-reviewer.md` — a review-only subagent for the rule above: run it
-  after any change to `.agents/*.ts` to check no `@Tool()` method or prompt string computes a
+- `reviewers/risk-boundary-reviewer.md` — a review-only subagent for the rule above: run it after
+  any change to product-agent TypeScript under `.agents/` to check no `@Tool()` method or prompt
+  string computes a
   severity, score, or pass/fail itself.
+
+Do not add a tracked `.claude/` configuration directory back to this repository. A developer's
+ignored `.claude/settings.local.json` may remain locally, but the shared source of truth for the
+development harness is `.agents/`.
 
 ## Git workflow
 

@@ -23,7 +23,7 @@ policies/aws     Default PlanGuard AWS policies
 fixtures/        terraform plans (planned) · review-fixture.json (for the .agents/ harness)
 docs/            installation · security · marketplace
 infrastructure/  Terraform for deploying PlanGuard itself
-.agents/         Type-chain AI review-agent harness (runnable with npm run harness)
+.agents/         Product AI review harness and development safeguards (npm run harness is available)
 ```
 
 ## Product boundary
