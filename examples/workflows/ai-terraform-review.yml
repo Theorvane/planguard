@@ -25,7 +25,7 @@ jobs:
       # Configure your cloud identity here, preferably through OIDC. Terraform needs it to create a plan.
       # Do not pass cloud credentials to the PlanGuard Action.
       - name: Explain the Terraform plan with your AI provider
-        uses: sjungwon03/planguard/actions/ai-review@9c2117f9827556344db2f9254e5ec00fd2757f41 # BYO-AI action security fix
+        uses: sjungwon03/planguard/actions/ai-review@e3aa4a9d57bd730cad11c8c43a9a4cadb45aaa6c # BYO-AI action security fix
         with:
           api-key: ${{ secrets.PLANGUARD_AI_API_KEY }}
           model: gpt-4.1-mini
