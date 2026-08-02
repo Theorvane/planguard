@@ -1,22 +1,36 @@
-# PlanGuard public deployment and GitHub App registration
+# PlanGuard public hosting and GitHub App registration
 
-This runbook takes PlanGuard from this public repository to an installable GitHub App. It intentionally
-uses a **health-only bootstrap deployment** first, so no fabricated GitHub App credentials are deployed.
+This runbook takes PlanGuard from this public repository to an installable GitHub App without
+prescribing a hosting provider. The chosen provider must run the repository's production
+`Dockerfile`, expose a public HTTPS URL, and provide encrypted environment variables.
+
+## Hosting requirements
+
+Choose a provider that meets all of these requirements:
+
+- Public HTTPS endpoint with a stable URL, used as `API_URL` below.
+- Docker build from the repository root (`Dockerfile`) and the platform-provided `PORT` environment variable.
+- Encrypted configuration for secrets; never commit an `.env`, private-key PEM, webhook secret, or upload token.
+- An always-on or reliably wakeable web service. If a free tier sleeps, test GitHub webhook retry and cold-start
+  behavior before making the App publicly installable.
 
 ## Security boundary
 
 - Bootstrap mode serves only `GET /healthz`; it returns `503` for webhooks and plan uploads.
 - Active mode requires all four secrets below; startup fails if any are missing.
-- Store values in Render's encrypted environment settings only. Do not commit a `.pem`, `.env`,
-  webhook secret, or upload token.
 - GitHub webhook SSL verification remains enabled.
 
-## 1. Deploy the bootstrap service in Render
+## 1. Deploy the bootstrap service
 
-1. Sign in at [Render](https://dashboard.render.com/) using the `sjungwon03` GitHub account.
-2. Select **New → Blueprint**, choose `sjungwon03/planguard`, branch `main`, and approve `render.yaml`.
-3. Wait for the `planguard-api` service to become live. Record its generated HTTPS URL, called `API_URL`
-   below. Verify in a browser or terminal:
+1. Create a web service from `sjungwon03/planguard` using the repository `Dockerfile`.
+2. Configure these non-secret environment variables:
+
+   | Key | Value |
+   | --- | --- |
+   | `PLANGUARD_BOOTSTRAP_MODE` | `true` |
+   | `NODE_ENV` | `production` |
+
+3. Deploy it and record its generated public HTTPS URL as `API_URL`. Verify:
 
    ```bash
    curl --fail "$API_URL/healthz"
@@ -42,15 +56,15 @@ The public URL is needed before the GitHub App can have a valid webhook destinat
 5. Generate a webhook secret, then create the app. On the app settings page, generate and download a
    private key. Record its App ID.
 
-## 3. Activate PlanGuard in Render
+## 3. Activate PlanGuard at the hosting provider
 
-In **Render → planguard-api → Environment**, replace the bootstrap setting and add these secrets:
+In the provider's encrypted service environment, replace the bootstrap setting and add these secrets:
 
 | Key | Value |
 | --- | --- |
 | `PLANGUARD_BOOTSTRAP_MODE` | `false` (or remove it) |
 | `PLANGUARD_GITHUB_APP_ID` | App ID from GitHub |
-| `PLANGUARD_GITHUB_PRIVATE_KEY` | full PEM contents; Render may use real newlines or `\\n` escapes |
+| `PLANGUARD_GITHUB_PRIVATE_KEY` | full PEM contents; escaped `\n` is also supported |
 | `PLANGUARD_GITHUB_WEBHOOK_SECRET` | secret created in GitHub |
 | `PLANGUARD_API_TOKEN` | a fresh high-entropy token generated locally |
 
@@ -60,7 +74,7 @@ Generate the upload token without putting it in shell history:
 openssl rand -base64 48
 ```
 
-Save the configuration. Render redeploys automatically. Then verify:
+Redeploy, then verify:
 
 ```bash
 curl --fail "$API_URL/healthz"
@@ -88,8 +102,8 @@ curl --fail "$API_URL/healthz"
 
 ## Operational checks and rollback
 
-- Render health failure: inspect Render logs, restore `PLANGUARD_BOOTSTRAP_MODE=true`, and redeploy. This
-  closes analysis endpoints while keeping the public health URL stable.
+- Hosting health failure: restore `PLANGUARD_BOOTSTRAP_MODE=true` and redeploy. This closes analysis endpoints
+  while keeping the public health URL stable.
 - Suspected secret exposure: rotate the GitHub App private key, webhook secret, and `PLANGUARD_API_TOKEN`;
-  update Render and all affected GitHub Actions secrets together.
+  update the hosting provider and all affected GitHub Actions secrets together.
 - Do not disable webhook signature verification. A missing secret is deliberately a startup error in active mode.
