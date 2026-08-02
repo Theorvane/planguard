@@ -36,6 +36,6 @@ PlanGuard helps people approve infrastructure changes safely.
 ## Current status
 
 Phase 1 foundation is implemented: Terraform plan normalization, deterministic AWS policy findings,
-risk scoring, GitHub App webhook/Check Run primitives, and a no-credential type-chain harness.
-The GitHub Action, worker, web dashboard, external policy scanners, cost estimation, persistence, and
-Marketplace workflow remain planned.
+risk scoring, GitHub App webhook/Check Run primitives, a token-protected Terraform plan upload API, and a
+composite Action that creates plans inside repository CI. The worker, web dashboard, external policy scanners,
+cost estimation, persistence, and Marketplace workflow remain planned.

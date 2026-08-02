@@ -21,7 +21,7 @@ function run(command, args, env) {
   });
 }
 
-test("uploads JSON plan without exposing the token and fails for a failed verdict", async () => {
+async function actionHarness(verdict) {
   const directory = await mkdtemp(join(tmpdir(), "planguard-action-"));
   temporaryDirectories.push(directory);
   const bin = join(directory, "bin");
@@ -33,7 +33,7 @@ test("uploads JSON plan without exposing the token and fails for a failed verdic
     authorization = request.headers.authorization ?? "";
     for await (const _chunk of request) { /* consume */ }
     response.setHeader("content-type", "application/json");
-    response.end(JSON.stringify({ risk: { score: 40, level: "High", conclusion: "failure" }, summary: "Risk score: 40/100" }));
+    response.end(JSON.stringify(verdict));
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const port = server.address().port;
@@ -49,10 +49,30 @@ test("uploads JSON plan without exposing the token and fails for a failed verdic
     GITHUB_STEP_SUMMARY: summary,
   });
   await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  return { authorization, output, summary, result };
+}
+
+test("uploads JSON plan without exposing the token and fails for a failed verdict", async () => {
+  const { authorization, output, summary, result } = await actionHarness({
+    risk: { score: 40, level: "High", conclusion: "failure" },
+    summary: "Risk score: 40/100",
+  });
 
   assert.equal(result.code, 1);
   assert.equal(authorization, "Bearer do-not-log-this-token");
   assert.doesNotMatch(`${result.stdout}${result.stderr}`, /do-not-log-this-token/);
   assert.match(await readFile(output, "utf8"), /conclusion=failure/);
   assert.match(await readFile(summary, "utf8"), /Risk score: 40\/100/);
+});
+
+test("writes outputs and succeeds for a successful deterministic verdict", async () => {
+  const { output, summary, result } = await actionHarness({
+    risk: { score: 0, level: "Low", conclusion: "success" },
+    summary: "Risk score: 0/100",
+  });
+
+  assert.equal(result.code, 0);
+  assert.match(await readFile(output, "utf8"), /risk-level=Low/);
+  assert.match(await readFile(output, "utf8"), /conclusion=success/);
+  assert.match(await readFile(summary, "utf8"), /^## PlanGuard/m);
 });
