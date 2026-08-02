@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
       # Configure the cloud identity here (for example, OIDC). Do not send it to PlanGuard.
-      - uses: sjungwon03/planguard/actions/analyze@main
+      - uses: Theorvane/planguard/actions/analyze@main
         with:
           api-url: https://planguard.example.com
           api-token: ${{ secrets.PLANGUARD_API_TOKEN }}
