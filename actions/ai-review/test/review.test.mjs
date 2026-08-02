@@ -22,9 +22,9 @@ test("builds an OpenAI-compatible explanation request from a sanitized Terraform
   assert.match(request.messages[0].content, /must not determine a pass\/fail verdict/i);
 });
 
-test("accepts only a safe HTTPS OpenAI-compatible endpoint", () => {
+test("accepts only a safe HTTPS OpenAI-compatible endpoint", async () => {
   assert.equal(
-    validateChatCompletionEndpoint("https://api.openai.com/v1/chat/completions"),
+    await validateChatCompletionEndpoint("https://api.openai.com/v1/chat/completions"),
     "https://api.openai.com/v1/chat/completions",
   );
   for (const value of [
@@ -32,7 +32,17 @@ test("accepts only a safe HTTPS OpenAI-compatible endpoint", () => {
     "https://key@example.com/v1/chat/completions",
     "https://api.openai.com/v1/chat/completions?api_key=leak",
   ]) {
-    assert.throws(() => validateChatCompletionEndpoint(value), /HTTPS endpoint/i);
+    await assert.rejects(() => validateChatCompletionEndpoint(value), /public HTTPS endpoint|public HTTPS addresses/i);
+  }
+});
+
+test("rejects non-public endpoints even when they use HTTPS", async () => {
+  for (const value of [
+    "https://127.0.0.1/v1/chat/completions",
+    "https://[::1]/v1/chat/completions",
+    "https://169.254.169.254/v1/chat/completions",
+  ]) {
+    await assert.rejects(() => validateChatCompletionEndpoint(value), /public HTTPS endpoint|public HTTPS addresses/i);
   }
 });
 

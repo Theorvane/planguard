@@ -32,6 +32,11 @@ test("posts only a sanitized plan and writes the AI explanation to the step summ
   await writeFile(terraform, `#!/usr/bin/env bash
 set -euo pipefail
 case "$1" in
+  init|plan|show)
+    [[ -z "\${INPUT_API_KEY:-}" ]] || { echo "Terraform inherited INPUT_API_KEY" >&2; exit 91; }
+    ;;
+esac
+case "$1" in
   init) exit 0 ;;
   plan) for arg in "$@"; do [[ "$arg" == -out=* ]] && touch "\${arg#-out=}"; done ;;
   show) cat "$FAKE_PLAN" ;;
@@ -59,7 +64,7 @@ printf '%s' '{"choices":[{"message":{"content":"Needs verification: review the M
       ...process.env,
       PATH: `${bin}:${process.env.PATH}`,
       INPUT_WORKING_DIRECTORY: ".",
-      INPUT_API_URL: "https://api.example.test/v1/chat/completions",
+      INPUT_API_URL: "https://api.openai.com/v1/chat/completions",
       INPUT_API_KEY: "secret-api-key-must-not-leak",
       INPUT_MODEL: "test-model",
       GITHUB_STEP_SUMMARY: stepSummary,

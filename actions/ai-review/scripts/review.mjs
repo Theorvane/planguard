@@ -1,3 +1,5 @@
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import { readFile, writeFile } from "node:fs/promises";
 
 const MAX_PLAN_BYTES = 512 * 1024;
@@ -51,7 +53,28 @@ function redact(value, sensitive) {
   );
 }
 
-export function validateChatCompletionEndpoint(input) {
+function isPublicAddress(address) {
+  if (isIP(address) === 4) {
+    const [first, second] = address.split(".").map(Number);
+    return !(
+      first === 0 ||
+      first === 10 ||
+      first === 127 ||
+      first >= 224 ||
+      (first === 100 && second >= 64 && second <= 127) ||
+      (first === 169 && second === 254) ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168)
+    );
+  }
+  if (isIP(address) === 6) {
+    const normalized = address.toLowerCase();
+    return !(normalized === "::1" || normalized === "::" || normalized.startsWith("fc") || normalized.startsWith("fd") || normalized.startsWith("fe80:" ));
+  }
+  return false;
+}
+
+export async function validateChatCompletionEndpoint(input) {
   let url;
   try {
     url = new URL(input);
@@ -60,7 +83,16 @@ export function validateChatCompletionEndpoint(input) {
   }
 
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
-    throw new Error("api-url must be an HTTPS endpoint.");
+    throw new Error("api-url must be a public HTTPS endpoint.");
+  }
+  let addresses;
+  try {
+    addresses = await lookup(url.hostname, { all: true, verbatim: true });
+  } catch {
+    throw new Error("api-url must resolve to a public HTTPS endpoint.");
+  }
+  if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) {
+    throw new Error("api-url must resolve only to public HTTPS addresses.");
   }
   return url.toString();
 }

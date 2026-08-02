@@ -21,13 +21,13 @@ response_body="$work_directory/response.json"
 summary="$work_directory/summary.md"
 
 pushd "$working_directory" >/dev/null
-terraform init -input=false -no-color
-terraform plan -input=false -no-color -out="$work_directory/plan.bin"
-terraform show -json "$work_directory/plan.bin" > "$raw_plan"
+env -u INPUT_API_KEY terraform init -input=false -no-color
+env -u INPUT_API_KEY terraform plan -input=false -no-color -out="$work_directory/plan.bin"
+env -u INPUT_API_KEY terraform show -json "$work_directory/plan.bin" > "$raw_plan"
 popd >/dev/null
 
 node "$script_directory/review.mjs" request "$raw_plan" "$INPUT_MODEL" "$request_body"
-node -e 'import(process.argv[1]).then(({validateChatCompletionEndpoint}) => console.log(validateChatCompletionEndpoint(process.argv[2])))' \
+node -e 'import(process.argv[1]).then(async ({validateChatCompletionEndpoint}) => console.log(await validateChatCompletionEndpoint(process.argv[2])))' \
   "$script_directory/review.mjs" "$INPUT_API_URL" > "$work_directory/api-url"
 
 curl --fail --silent --show-error \
