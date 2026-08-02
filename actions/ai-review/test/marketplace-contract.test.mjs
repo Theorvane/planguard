@@ -9,8 +9,10 @@ test("exposes a Marketplace-compatible root wrapper for the secure explanation A
   assert.match(rootAction, /^description: .+/m);
   assert.match(rootAction, /^branding:\n  icon: shield\n  color: purple$/m);
   assert.match(rootAction, /^runs:\n  using: composite$/m);
-  assert.match(rootAction, /uses: \.\/actions\/ai-review/);
-  assert.match(rootAction, /plan-json-path:/);
+  assert.match(rootAction, /shell: bash/);
+  assert.match(rootAction, /run: \$\{\{ github\.action_path \}\}\/actions\/ai-review\/scripts\/explain\.sh/);
+  assert.match(rootAction, /INPUT_PLAN_JSON_PATH: \$\{\{ inputs\.plan-json-path \}\}/);
+  assert.doesNotMatch(rootAction, /uses: \.\/actions\/ai-review/);
   assert.doesNotMatch(rootAction, /^\s*(terraform (init|plan|show)|run:.*terraform)/im);
   assert.doesNotMatch(rootAction, /pull_request_target/);
 });

@@ -21,9 +21,10 @@ runs:
   using: composite
   steps:
     - name: Generate explanation from sanitized plan
-      uses: ./actions/ai-review
-      with:
-        api-key: ${{ inputs.api-key }}
-        model: ${{ inputs.model }}
-        plan-json-path: ${{ inputs.plan-json-path }}
-        api-url: ${{ inputs.api-url }}
+      shell: bash
+      env:
+        INPUT_API_KEY: ${{ inputs.api-key }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_PLAN_JSON_PATH: ${{ inputs.plan-json-path }}
+        INPUT_API_URL: ${{ inputs.api-url }}
+      run: ${{ github.action_path }}/actions/ai-review/scripts/explain.sh
