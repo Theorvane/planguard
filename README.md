@@ -110,6 +110,37 @@ PlanGuard does not send your Terraform binary plan or cloud credentials to the A
 
 `api-url` must be an HTTPS hostname. URLs with a query string, fragment, embedded credential, or IP literal are rejected, as are private and local network addresses.
 
+## Compatible AI providers
+
+PlanGuard uses the OpenAI **Chat Completions** request and response format. Any provider that accepts this wire format and returns a normal chat-completion `choices[0].message.content` response can work. The provider endpoint must also meet PlanGuard's HTTPS and public-IPv4 hostname checks.
+
+The following official public endpoints match that interface as of August 2026. Create the provider key in the same `PLANGUARD_AI_API_KEY` GitHub secret; change only `model` and, when shown, `api-url`.
+
+| Provider | Example `model` | `api-url` setting |
+| --- | --- | --- |
+| OpenAI | `gpt-4.1-mini` | Omit it; this is the default `https://api.openai.com/v1/chat/completions`. |
+| xAI (Grok) | A Grok chat model ID enabled for your xAI account | `https://api.x.ai/v1/chat/completions` |
+| OpenRouter | A routed model ID such as `openai/gpt-4.1-mini` | `https://openrouter.ai/api/v1/chat/completions` |
+| Groq | A Groq chat model ID enabled for your account | `https://api.groq.com/openai/v1/chat/completions` |
+| Together AI | A Together chat model ID enabled for your account | `https://api.together.xyz/v1/chat/completions` |
+| Mistral AI | A Mistral chat model ID enabled for your account | `https://api.mistral.ai/v1/chat/completions` |
+| DeepSeek | A DeepSeek chat model ID enabled for your account | `https://api.deepseek.com/chat/completions` |
+
+For example, to use xAI, replace the explanation Action inputs with:
+
+```yaml
+      - uses: sjungwon03/planguard@v1
+        with:
+          api-key: ${{ secrets.PLANGUARD_AI_API_KEY }}
+          model: your-enabled-grok-model-id
+          plan-json-path: plan-artifact/planguard-sanitized-plan.json
+          api-url: https://api.x.ai/v1/chat/completions
+```
+
+Provider model catalogs, account access, quotas, regional availability, and pricing are controlled by the provider and can change independently of PlanGuard. This table documents API-shape compatibility, not a guarantee that every model offered by a provider is available to every account. Use a non-production plan first when onboarding a new provider.
+
+Official provider references: [OpenAI Chat Completions](https://developers.openai.com/api/reference/chat-completions/overview), [xAI Chat API](https://docs.x.ai/developers/rest-api-reference/inference/chat.md), [OpenRouter Chat Completions](https://openrouter.ai/docs/api/api-reference/chat/create-a-chat-completion), [Groq OpenAI compatibility](https://console.groq.com/docs/openai), [Together AI compatibility](https://docs.together.ai/docs/inference/openai-compatibility), [Mistral Chat Completions](https://docs.mistral.ai/studio-api/conversations/chat-completion), and [DeepSeek API compatibility](https://api-docs.deepseek.com/).
+
 ## Security model and limitations
 
 The supplied workflow uses `workflow_dispatch` only and explicitly checks out the default branch. Do not change it to run modified PR Terraform beside cloud credentials or an AI secret. In particular, adding `pull_request_target` is unsafe because it can expose secrets to unreviewed code.
