@@ -47,8 +47,8 @@ test("rejects non-public endpoints even when they use HTTPS", async () => {
   }
 });
 
-test("accepts only public-unicast address ranges for provider endpoints", () => {
-  for (const value of ["8.8.8.8", "2606:4700:4700::1111"]) assert.equal(isPublicAddress(value), true, value);
+test("accepts only public IPv4 address ranges for provider endpoints", () => {
+  for (const value of ["8.8.8.8"]) assert.equal(isPublicAddress(value), true, value);
   for (const value of [
     "0.0.0.0", "10.0.0.1", "100.64.0.1", "127.0.0.1", "169.254.169.254", "172.16.0.1",
     "192.0.0.1", "192.0.2.1", "192.168.0.1", "198.18.0.1", "198.51.100.1", "203.0.113.1",

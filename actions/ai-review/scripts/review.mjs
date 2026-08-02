@@ -69,14 +69,8 @@ export function isPublicAddress(address) {
       (first === 203 && second === 0 && third === 113)
     );
   }
-  if (isIP(address) === 6) {
-    const [firstPart, secondPart] = address.toLowerCase().split(":");
-    const firstHextet = Number.parseInt(firstPart || "0", 16);
-    const secondHextet = Number.parseInt(secondPart || "0", 16);
-    // Public IPv6 traffic must be global-unicast (2000::/3), excluding the documentation range 2001:db8::/32.
-    // loopback, link-local, ULA, documentation, multicast, and all reserved ranges.
-    return (firstHextet & 0xe000) === 0x2000 && !(firstHextet === 0x2001 && secondHextet === 0x0db8);
-  }
+  // The Action pins curl to a validated address. Restricting this path to public IPv4 avoids
+  // incomplete IPv6 special-purpose range classification and keeps the pin format unambiguous.
   return false;
 }
 
@@ -93,7 +87,7 @@ export async function prepareChatCompletionEndpoint(input) {
   }
   let addresses;
   try {
-    addresses = await lookup(url.hostname, { all: true, verbatim: true });
+    addresses = await lookup(url.hostname, { all: true, family: 4, verbatim: true });
   } catch {
     throw new Error("api-url must resolve to a public HTTPS endpoint.");
   }

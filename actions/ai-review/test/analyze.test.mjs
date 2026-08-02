@@ -27,6 +27,7 @@ test("posts only a sanitized plan and writes the AI explanation to the step summ
   const terraform = path.join(bin, "terraform");
   const curl = path.join(bin, "curl");
   const capturedRequest = path.join(directory, "request.json");
+  const capturedCurlArgs = path.join(directory, "curl-args.txt");
   const stepSummary = path.join(directory, "summary.md");
   await mkdir(bin);
   await writeFile(terraform, `#!/usr/bin/env bash
@@ -45,6 +46,7 @@ esac
   await writeFile(curl, `#!/usr/bin/env bash
 set -euo pipefail
 output=""; body=""
+printf '%s\n' "$@" > "$CAPTURED_CURL_ARGS"
 while (($#)); do
   case "$1" in
     --output) output="$2"; shift 2 ;;
@@ -70,14 +72,19 @@ printf '%s' '{"choices":[{"message":{"content":"Needs verification: review the M
       GITHUB_STEP_SUMMARY: stepSummary,
       FAKE_PLAN: sensitiveFixture,
       CAPTURED_REQUEST: capturedRequest,
+      CAPTURED_CURL_ARGS: capturedCurlArgs,
     },
   });
 
   assert.equal(result.status, 0, result.stderr);
   const request = await readFile(capturedRequest, "utf8");
+  const curlArgs = await readFile(capturedCurlArgs, "utf8");
   const summary = await readFile(stepSummary, "utf8");
   assert.doesNotMatch(request, /old-rotated-secret|new-rotated-secret/);
   assert.doesNotMatch(`${result.stdout}\n${result.stderr}\n${summary}`, /secret-api-key-must-not-leak|old-rotated-secret|new-rotated-secret/);
+  assert.match(curlArgs, /^-q$/m);
+  assert.match(curlArgs, /^--noproxy\n\*$/m);
+  assert.match(curlArgs, /^--resolve\napi\.openai\.com:443:/m);
   assert.match(summary, /PlanGuard AI explanation/);
   assert.match(summary, /Needs verification:/);
 });
