@@ -10,6 +10,10 @@ async function readJson(relativePath) {
   return JSON.parse(await readFile(new URL(relativePath, `file://${root}/`), "utf8"));
 }
 
+test("normalizes project references to POSIX separators", () => {
+  assert.equal(normalizeProjectReference("..\\..\\packages\\schemas"), "../../packages/schemas");
+});
+
 test("derives project references from each workspace manifest", () => {
   const workspaceDirectories = new Map([
     ["@planguard/schemas", "packages/schemas"],
@@ -52,12 +56,16 @@ function referencePaths(config) {
   return (config.references ?? []).map(({ path }) => path);
 }
 
+function normalizeProjectReference(path) {
+  return path.replaceAll("\\", "/");
+}
+
 function expectedReferences(workspaceDirectory, dependencies = {}, directoriesByPackageName) {
   return Object.keys(dependencies)
     .filter((packageName) => directoriesByPackageName.has(packageName))
     .map((packageName) => {
       const targetDirectory = directoriesByPackageName.get(packageName);
-      return relative(workspaceDirectory, targetDirectory);
+      return normalizeProjectReference(relative(workspaceDirectory, targetDirectory));
     })
     .sort();
 }
