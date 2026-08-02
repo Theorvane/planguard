@@ -43,9 +43,11 @@ confirms publication.
 
 ## Consumer safety
 
-Use the supplied [BYO-AI workflow example](../../examples/workflows/ai-terraform-review.yml) as the secure default.
-It prepares a sanitized Terraform plan in a trusted job and sends only that artifact to the root Marketplace
-Action in a separate job. Do not add `pull_request_target`, do not execute unreviewed Terraform beside cloud
-credentials, and keep the AI API key in an Actions secret.
+Use the supplied [BYO-AI workflow example](../../examples/workflows/ai-terraform-review.yml) as the secure
+default. It follows the same two-job boundary as the Marketplace Action: trusted Terraform preparation produces a
+sanitized artifact, and a separate secret-bearing job sends only that artifact to the AI provider. The example
+pins a full commit SHA for maximum supply-chain control; after publication, consumers can replace only its
+explanation step with `sjungwon03/planguard@v1`. Do not add `pull_request_target`, do not execute unreviewed
+Terraform beside cloud credentials, and keep the AI API key in an Actions secret.
 
 Authoritative GitHub documentation: <https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace>
