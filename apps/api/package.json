@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@planguard/github-client": "*",
+    "@planguard/policy-engine": "*",
     "@planguard/risk-engine": "*",
     "@planguard/schemas": "*",
     "@planguard/terraform-parser": "*"

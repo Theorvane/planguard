@@ -14,13 +14,15 @@
           "id": "sgr-abc123",
           "cidr_blocks": ["10.0.0.0/8"],
           "from_port": 22,
-          "to_port": 22
+          "to_port": 22,
+          "protocol": "tcp"
         },
         "after": {
           "id": "sgr-abc123",
           "cidr_blocks": ["0.0.0.0/0"],
           "from_port": 22,
-          "to_port": 22
+          "to_port": 22,
+          "protocol": "tcp"
         },
         "after_unknown": { "id": false, "cidr_blocks": false, "from_port": false, "to_port": false }
       }

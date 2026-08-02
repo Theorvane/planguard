@@ -3,7 +3,7 @@ import { test } from "node:test";
 import type { RequestClient } from "@planguard/github-client";
 import type { Finding } from "@planguard/schemas";
 import type { TerraformPlanJson } from "@planguard/terraform-parser";
-import { NO_POLICY_ENGINE_NOTICE, runAnalysis } from "../src/analysis.js";
+import { runAnalysis } from "../src/analysis.js";
 
 function recordingClient() {
   const calls: Array<{ route: string; options: Record<string, unknown> }> = [];
@@ -34,6 +34,24 @@ const MULTI_AZ_DISABLED: TerraformPlanJson = {
   ],
 };
 
+const OPEN_SSH: TerraformPlanJson = {
+  format_version: "1.2",
+  resource_changes: [
+    {
+      address: "aws_security_group_rule.bastion_ssh",
+      mode: "managed",
+      type: "aws_security_group_rule",
+      name: "bastion_ssh",
+      provider_name: "registry.terraform.io/hashicorp/aws",
+      change: {
+        actions: ["update"],
+        before: { cidr_blocks: ["10.0.0.0/8"], from_port: 22, to_port: 22, protocol: "tcp" },
+        after: { cidr_blocks: ["0.0.0.0/0"], from_port: 22, to_port: 22, protocol: "tcp" },
+      },
+    },
+  ],
+};
+
 const CRITICAL_AVAILABILITY: Finding = {
   category: "availability",
   severity: "critical",
@@ -41,6 +59,15 @@ const CRITICAL_AVAILABILITY: Finding = {
   evidence: "multi_az true -> false",
   source: "planguard:PG-AVAILABILITY-RDS-MULTI-AZ",
   recommendation: "Keep multi_az enabled in production.",
+};
+
+const EXTERNAL_SECURITY: Finding = {
+  category: "security",
+  severity: "moderate",
+  title: "External scanner finding",
+  evidence: "Scanner evidence.",
+  source: "checkov:CKV_AWS_000",
+  recommendation: "Review the external scanner finding.",
 };
 
 const BASE = { owner: "acme", repo: "api-infra", checkRunId: 42 };
@@ -91,21 +118,49 @@ test("an escalated verdict explains which finding forced it", async () => {
   assert.match(summary, /RDS Multi-AZ is being disabled/);
 });
 
-test("warns that the score is incomplete while policy-engine is missing", async () => {
-  const { client } = recordingClient();
-  const { summary } = await runAnalysis(client, { ...BASE, plan: MULTI_AZ_DISABLED });
+test("derives a critical failed Check from the RDS Multi-AZ policy", async () => {
+  const { calls, client } = recordingClient();
 
-  assert.match(summary, /not enabled yet/);
-  assert.equal(summary.includes(NO_POLICY_ENGINE_NOTICE), true);
+  const { risk, summary } = await runAnalysis(client, { ...BASE, plan: MULTI_AZ_DISABLED });
+
+  assert.equal(risk.level, "Critical");
+  assert.equal(risk.conclusion, "failure");
+  assert.equal(calls[0]?.options.conclusion, "failure");
+  assert.match(summary, /RDS Multi-AZ is being disabled/);
+  assert.doesNotMatch(summary, /not enabled yet/);
 });
 
-test("omits the warning once findings are supplied", async () => {
+test("merges deterministic policy findings with normalized external findings", async () => {
   const { client } = recordingClient();
+
   const { summary } = await runAnalysis(client, {
     ...BASE,
     plan: MULTI_AZ_DISABLED,
-    securityFindings: [],
-    availabilityFindings: [],
+    securityFindings: [EXTERNAL_SECURITY],
+  });
+
+  assert.match(summary, /Security findings: 1/);
+  assert.match(summary, /Availability findings: 1/);
+  assert.match(summary, /External scanner finding/);
+  assert.match(summary, /RDS Multi-AZ is being disabled/);
+});
+
+test("derives a high security finding when a plan exposes SSH without changing its port", async () => {
+  const { calls, client } = recordingClient();
+
+  const { risk, summary } = await runAnalysis(client, { ...BASE, plan: OPEN_SSH });
+
+  assert.equal(risk.level, "High");
+  assert.equal(risk.conclusion, "failure");
+  assert.equal(calls[0]?.options.conclusion, "failure");
+  assert.match(summary, /SSH access is exposed to the internet/);
+});
+
+test("omits policy-engine warnings once deterministic policies are enabled", async () => {
+  const { client } = recordingClient();
+  const { summary } = await runAnalysis(client, {
+    ...BASE,
+    plan: { format_version: "1.2", resource_changes: [] },
   });
 
   assert.doesNotMatch(summary, /not enabled yet/);

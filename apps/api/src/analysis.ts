@@ -3,6 +3,7 @@ import {
   buildCheckRunSummary,
   completeCheckRun,
 } from "@planguard/github-client";
+import { analyzePolicies } from "@planguard/policy-engine";
 import { calculateRisk, type RiskConfig, type RiskResult } from "@planguard/risk-engine";
 import type { Finding } from "@planguard/schemas";
 import { type TerraformPlanJson, parseTerraformPlan } from "@planguard/terraform-parser";
@@ -12,26 +13,13 @@ export interface AnalysisRequest {
   readonly repo: string;
   readonly checkRunId: number;
   readonly plan: TerraformPlanJson;
-  /**
-   * Findings from policy-engine. That package does not exist yet, so callers pass
-   * nothing and every analysis currently scores on structure alone — see
-   * `NO_POLICY_ENGINE_NOTICE`.
-   */
+  /** Normalized findings from optional external scanners such as Checkov. */
   readonly securityFindings?: ReadonlyArray<Finding>;
   readonly availabilityFindings?: ReadonlyArray<Finding>;
   readonly estimatedMonthlyDeltaUsd?: number;
   readonly riskConfig?: RiskConfig;
 }
 
-/**
- * Until policy-engine lands there are no security or availability findings, and those
- * two axes carry 60% of the score. Every result is therefore an undercount, and the
- * Check says so rather than presenting a falsely clean verdict.
- */
-export const NO_POLICY_ENGINE_NOTICE =
-  "Security and availability policy checks are not enabled yet, so this score reflects " +
-  "structural risk only (resource actions, blast radius, cost). Do not read a passing " +
-  "result as a security review.";
 
 export interface AnalysisResult {
   readonly risk: RiskResult;
@@ -49,8 +37,15 @@ export async function runAnalysis(
   request: AnalysisRequest,
 ): Promise<AnalysisResult> {
   const resourceChanges = parseTerraformPlan(request.plan);
-  const securityFindings = request.securityFindings ?? [];
-  const availabilityFindings = request.availabilityFindings ?? [];
+  const policyFindings = analyzePolicies(resourceChanges);
+  const securityFindings = [
+    ...policyFindings.filter((finding) => finding.category === "security"),
+    ...(request.securityFindings ?? []),
+  ];
+  const availabilityFindings = [
+    ...policyFindings.filter((finding) => finding.category === "availability"),
+    ...(request.availabilityFindings ?? []),
+  ];
 
   const risk = calculateRisk(
     {
@@ -68,7 +63,6 @@ export async function runAnalysis(
     resourceChanges,
     securityFindings,
     availabilityFindings,
-    policyEngineEnabled: request.securityFindings !== undefined,
   });
 
   await completeCheckRun(client, {
@@ -89,7 +83,6 @@ function buildSummary(
     resourceChanges: ReturnType<typeof parseTerraformPlan>;
     securityFindings: ReadonlyArray<Finding>;
     availabilityFindings: ReadonlyArray<Finding>;
-    policyEngineEnabled: boolean;
   },
 ): string {
   const sections = [
@@ -118,10 +111,6 @@ function buildSummary(
       `- Cost impact: ${risk.breakdown.costImpact.score} — ${risk.breakdown.costImpact.reason}`,
     ].join("\n"),
   );
-
-  if (!context.policyEngineEnabled) {
-    sections.push(NO_POLICY_ENGINE_NOTICE);
-  }
 
   return sections.join("\n\n");
 }
