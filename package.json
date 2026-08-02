@@ -7,14 +7,16 @@
   "engines": {
     "node": ">=20"
   },
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "prebuild": "npm run build --workspaces --if-present",
-    "build": "tsc --project tsconfig.json",
-    "pretypecheck": "npm run build --workspaces --if-present",
-    "typecheck": "tsc --noEmit",
-    "test": "npm run test --workspaces --if-present",
-    "harness": "npm run build && node dist/.agents/harness.js"
+    "build": "tsc --build --force",
+    "typecheck": "tsc --build --force",
+    "test": "npm run test:build-chain && npm run test --workspaces --if-present",
+    "harness": "npm run build && node dist/.agents/harness.js",
+    "test:build-chain": "node --test test/build-chain.test.mjs"
   },
   "dependencies": {
     "@langchain/anthropic": "^1.5.2",
@@ -25,6 +27,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "typescript": "^5.9.3"
   }
 }

@@ -7,6 +7,8 @@
     "strict": true,
     "verbatimModuleSyntax": true,
     "experimentalDecorators": false,
+    "composite": true,
+    "declaration": true,
     "skipLibCheck": true,
     "resolveJsonModule": true
   }

@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build": "tsc --build --force",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
