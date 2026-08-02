@@ -11,24 +11,36 @@ permissions:
   contents: read
 
 jobs:
+  prepare-sanitized-plan:
+    # This job executes pull-request Terraform without the model API key.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      - uses: sjungwon03/planguard/actions/prepare-ai-review@46f21f295868902bd371d9adb1a2c6756d84b5bf
+        with:
+          working-directory: infrastructure
+          output-path: planguard-sanitized-plan.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: planguard-sanitized-plan
+          path: planguard-sanitized-plan.json
+          if-no-files-found: error
+          retention-days: 1
+
   explain-plan:
-    # Do not expose an AI API secret to code submitted from a fork.
+    needs: prepare-sanitized-plan
+    # Secrets are never made available to fork PRs or the job that runs Terraform.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Check out pull request
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
-
-      # Configure your cloud identity here, preferably through OIDC. Terraform needs it to create a plan.
-      # Do not pass cloud credentials to the PlanGuard Action.
-      - name: Explain the Terraform plan with your AI provider
-        uses: sjungwon03/planguard/actions/ai-review@e3aa4a9d57bd730cad11c8c43a9a4cadb45aaa6c # BYO-AI action security fix
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: planguard-sanitized-plan
+          path: plan-artifact
+      - uses: sjungwon03/planguard/actions/ai-review@46f21f295868902bd371d9adb1a2c6756d84b5bf
         with:
           api-key: ${{ secrets.PLANGUARD_AI_API_KEY }}
           model: gpt-4.1-mini
-          # For another OpenAI-compatible provider, change api-url and keep the key in a GitHub secret.
-          # api-url: https://provider.example/v1/chat/completions
-          working-directory: infrastructure
+          plan-json-path: plan-artifact/planguard-sanitized-plan.json
+          # api-url: https://your-provider.example/v1/chat/completions
