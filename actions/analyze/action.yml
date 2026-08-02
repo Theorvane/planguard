@@ -1,0 +1,30 @@
+name: PlanGuard Terraform Analysis
+description: Generate a Terraform plan locally and submit only its JSON representation to PlanGuard.
+inputs:
+  api-url:
+    description: PlanGuard API base URL (without /analysis/terraform-plan).
+    required: true
+  api-token:
+    description: Repository secret for PlanGuard plan upload authentication.
+    required: true
+  working-directory:
+    description: Directory containing Terraform configuration.
+    required: false
+    default: .
+outputs:
+  risk-level:
+    description: Deterministic PlanGuard risk level.
+    value: ${{ steps.analyze.outputs.risk-level }}
+  conclusion:
+    description: Deterministic PlanGuard conclusion.
+    value: ${{ steps.analyze.outputs.conclusion }}
+runs:
+  using: composite
+  steps:
+    - id: analyze
+      shell: bash
+      run: ${{ github.action_path }}/scripts/analyze.sh
+      env:
+        INPUT_API_URL: ${{ inputs.api-url }}
+        INPUT_API_TOKEN: ${{ inputs.api-token }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
