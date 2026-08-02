@@ -1,4 +1,10 @@
-export interface ApiConfig {
+export interface BootstrapConfig {
+  readonly mode: "bootstrap";
+  readonly port: number;
+}
+
+export interface ActiveApiConfig {
+  readonly mode: "active";
   readonly appId: string;
   readonly privateKey: string;
   readonly webhookSecret: string;
@@ -7,16 +13,23 @@ export interface ApiConfig {
   readonly port: number;
 }
 
+export type ApiConfig = BootstrapConfig | ActiveApiConfig;
+
 /**
- * Reads configuration from the environment, failing loudly on anything missing.
+ * Reads configuration from the environment.
  *
- * A missing webhook secret must never degrade into "skip verification" — that would
- * let anyone forge a webhook and drive a Check Run. Absent config is a startup error,
- * not a runtime fallback.
+ * Bootstrap mode is intentionally health-only: it exists solely to obtain a first public HTTPS
+ * URL before a GitHub App has generated its credentials. It never accepts webhooks or plan uploads.
  */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
-  const missing: string[] = [];
+  const port = Number(env.PORT ?? 3000);
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new RangeError(`PORT must be a valid port number, got "${env.PORT}".`);
+  }
 
+  if (env.PLANGUARD_BOOTSTRAP_MODE === "true") return { mode: "bootstrap", port };
+
+  const missing: string[] = [];
   const read = (name: string): string => {
     const value = env[name];
     if (!value || value.trim() === "") {
@@ -38,13 +51,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     );
   }
 
-  const port = Number(env.PORT ?? 3000);
-  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-    throw new RangeError(`PORT must be a valid port number, got "${env.PORT}".`);
-  }
-
-  // Private keys are commonly stored in env with literal \n rather than real newlines.
   return {
+    mode: "active",
     appId,
     privateKey: privateKey.replace(/\\n/g, "\n"),
     webhookSecret,

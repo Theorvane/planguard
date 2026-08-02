@@ -4,7 +4,7 @@ import { after, before, test } from "node:test";
 import { sign } from "@octokit/webhooks-methods";
 import type { RequestClient } from "@planguard/github-client";
 import { createInMemoryDeliveryLog } from "../src/delivery-log.js";
-import { createApiServer } from "../src/server.js";
+import { createApiServer, createBootstrapServer } from "../src/server.js";
 
 const SECRET = "planguard-test-secret";
 const calls: Array<{ route: string }> = [];
@@ -45,6 +45,19 @@ test("GET /healthz reports ok", async () => {
   const response = await fetch(`${baseUrl}/healthz`);
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { status: "ok" });
+});
+
+test("bootstrap server exposes health only until GitHub App credentials are configured", async () => {
+  const bootstrap = createBootstrapServer();
+  await new Promise<void>((resolve) => bootstrap.listen(0, "127.0.0.1", resolve));
+  const { port } = bootstrap.address() as AddressInfo;
+  const url = `http://127.0.0.1:${port}`;
+  try {
+    assert.deepEqual(await (await fetch(`${url}/healthz`)).json(), { status: "bootstrap" });
+    assert.equal((await fetch(`${url}/webhooks/github`, { method: "POST" })).status, 503);
+  } finally {
+    await new Promise<void>((resolve, reject) => bootstrap.close((error) => (error ? reject(error) : resolve())));
+  }
 });
 
 test("unknown routes return 404", async () => {

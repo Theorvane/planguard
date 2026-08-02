@@ -127,6 +127,16 @@ export function createApiServer(deps: ApiServerDeps): Server {
   });
 }
 
+export function createBootstrapServer(): Server {
+  return createServer((request, response) => {
+    if (request.method === "GET" && request.url === "/healthz") {
+      send(response, 200, { status: "bootstrap" });
+      return;
+    }
+    send(response, 503, { message: "PlanGuard is awaiting GitHub App configuration." });
+  });
+}
+
 async function route(
   request: IncomingMessage,
   response: ServerResponse,

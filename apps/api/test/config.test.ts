@@ -11,9 +11,17 @@ const VALID = {
 
 test("loads a complete configuration", () => {
   const config = loadConfig({ ...VALID, PORT: "8080" });
+  assert.equal(config.mode, "active");
+  if (config.mode !== "active") throw new Error("Expected active configuration.");
   assert.equal(config.appId, "12345");
   assert.equal(config.webhookSecret, "s3cret");
   assert.equal(config.port, 8080);
+});
+
+test("loads health-only bootstrap configuration without GitHub App secrets", () => {
+  const config = loadConfig({ PLANGUARD_BOOTSTRAP_MODE: "true", PORT: "10000" });
+  assert.equal(config.mode, "bootstrap");
+  assert.equal(config.port, 10000);
 });
 
 test("a missing webhook secret is a startup error, never a skipped check", () => {
@@ -42,6 +50,7 @@ test("restores newlines in a private key stored with escaped \\n", () => {
     ...VALID,
     PLANGUARD_GITHUB_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\\nabc\\n-----END RSA PRIVATE KEY-----",
   });
+  if (config.mode !== "active") throw new Error("Expected active configuration.");
   assert.ok(config.privateKey.includes("\n"));
   assert.doesNotMatch(config.privateKey, /\\n/);
 });
