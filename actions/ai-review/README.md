@@ -21,7 +21,9 @@ the plan, Terraform state, the binary plan, or your provider credentials.
 
 The endpoint must be HTTPS and resolve only to public Internet addresses. URLs with embedded credentials, query
 parameters, or fragments are rejected; private, loopback, and link-local endpoints are not supported because
-an untrusted pull request must not be able to direct the API key at runner-local services.
+an untrusted pull request must not be able to direct the API key at runner-local services. The Action resolves
+an approved hostname once and pins `curl` to that verified address, preventing a later DNS rebinding response
+from changing the connection target.
 
 ## Add it to a repository
 

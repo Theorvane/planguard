@@ -27,16 +27,21 @@ env -u INPUT_API_KEY terraform show -json "$work_directory/plan.bin" > "$raw_pla
 popd >/dev/null
 
 node "$script_directory/review.mjs" request "$raw_plan" "$INPUT_MODEL" "$request_body"
-node -e 'import(process.argv[1]).then(async ({validateChatCompletionEndpoint}) => console.log(await validateChatCompletionEndpoint(process.argv[2])))' \
-  "$script_directory/review.mjs" "$INPUT_API_URL" > "$work_directory/api-url"
+endpoint_config="$work_directory/endpoint.json"
+node "$script_directory/review.mjs" endpoint "$INPUT_API_URL" "$endpoint_config"
+endpoint_url=$(node -e 'const endpoint=JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(endpoint.url)' "$endpoint_config")
+endpoint_host=$(node -e 'const endpoint=JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(endpoint.host)' "$endpoint_config")
+endpoint_port=$(node -e 'const endpoint=JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(endpoint.port)' "$endpoint_config")
+endpoint_address=$(node -e 'const endpoint=JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(endpoint.address)' "$endpoint_config")
 
 curl --fail --silent --show-error \
+  --resolve "$endpoint_host:$endpoint_port:$endpoint_address" \
   --request POST \
   --header "Authorization: Bearer $INPUT_API_KEY" \
   --header "Content-Type: application/json" \
   --data-binary "@$request_body" \
   --output "$response_body" \
-  "$(<"$work_directory/api-url")"
+  "$endpoint_url"
 
 node "$script_directory/review.mjs" summary "$response_body" "$summary"
 {

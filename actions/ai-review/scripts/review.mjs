@@ -53,9 +53,9 @@ function redact(value, sensitive) {
   );
 }
 
-function isPublicAddress(address) {
+export function isPublicAddress(address) {
   if (isIP(address) === 4) {
-    const [first, second] = address.split(".").map(Number);
+    const [first, second, third] = address.split(".").map(Number);
     return !(
       first === 0 ||
       first === 10 ||
@@ -64,17 +64,23 @@ function isPublicAddress(address) {
       (first === 100 && second >= 64 && second <= 127) ||
       (first === 169 && second === 254) ||
       (first === 172 && second >= 16 && second <= 31) ||
-      (first === 192 && second === 168)
+      (first === 192 && (second === 0 || second === 2 || second === 88 || second === 168)) ||
+      (first === 198 && (second === 18 || second === 19 || second === 51)) ||
+      (first === 203 && second === 0 && third === 113)
     );
   }
   if (isIP(address) === 6) {
-    const normalized = address.toLowerCase();
-    return !(normalized === "::1" || normalized === "::" || normalized.startsWith("fc") || normalized.startsWith("fd") || normalized.startsWith("fe80:" ));
+    const [firstPart, secondPart] = address.toLowerCase().split(":");
+    const firstHextet = Number.parseInt(firstPart || "0", 16);
+    const secondHextet = Number.parseInt(secondPart || "0", 16);
+    // Public IPv6 traffic must be global-unicast (2000::/3), excluding the documentation range 2001:db8::/32.
+    // loopback, link-local, ULA, documentation, multicast, and all reserved ranges.
+    return (firstHextet & 0xe000) === 0x2000 && !(firstHextet === 0x2001 && secondHextet === 0x0db8);
   }
   return false;
 }
 
-export async function validateChatCompletionEndpoint(input) {
+export async function prepareChatCompletionEndpoint(input) {
   let url;
   try {
     url = new URL(input);
@@ -94,7 +100,16 @@ export async function validateChatCompletionEndpoint(input) {
   if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) {
     throw new Error("api-url must resolve only to public HTTPS addresses.");
   }
-  return url.toString();
+  if (isIP(url.hostname) !== 0) {
+    throw new Error("api-url must use a public DNS hostname, not an IP address.");
+  }
+  const port = url.port || "443";
+  const address = addresses[0].address;
+  return { url: url.toString(), host: url.hostname, port, address };
+}
+
+export async function validateChatCompletionEndpoint(input) {
+  return (await prepareChatCompletionEndpoint(input)).url;
 }
 
 export function buildChatCompletionRequest(plan, model) {
@@ -130,6 +145,9 @@ if (command === "request") {
   const [planPath, model, requestPath] = args;
   const plan = JSON.parse(await readFile(planPath, "utf8"));
   await writeFile(requestPath, JSON.stringify(buildChatCompletionRequest(plan, model)));
+} else if (command === "endpoint") {
+  const [input, outputPath] = args;
+  await writeFile(outputPath, JSON.stringify(await prepareChatCompletionEndpoint(input)));
 } else if (command === "summary") {
   const [responsePath, summaryPath] = args;
   const response = JSON.parse(await readFile(responsePath, "utf8"));
