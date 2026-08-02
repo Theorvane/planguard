@@ -37,6 +37,8 @@ PlanGuard helps people approve infrastructure changes safely.
 
 Phase 1 foundation is implemented: Terraform plan normalization, deterministic AWS policy findings,
 risk scoring, GitHub App webhook/Check Run primitives, a token-protected Terraform plan upload API, and a
-composite Action that creates plans inside repository CI. A container deployment and GitHub App
-registration runbook are included in `docs/installation/`. The worker, web dashboard, external policy
+composite Actions that create plans inside repository CI. The **BYO-AI Action** lets a repository use its
+own OpenAI-compatible API key with no PlanGuard-hosted service; copy
+[`examples/workflows/ai-terraform-review.yml`](examples/workflows/ai-terraform-review.yml) to begin.
+The container deployment/GitHub App path remains optional. The worker, web dashboard, external policy
 scanners, cost estimation, persistence, and Marketplace workflow remain planned.
