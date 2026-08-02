@@ -18,7 +18,7 @@ jobs:
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
       # Configure an environment-protected, short-lived, plan-only cloud identity here. This job
       # checks out the trusted default branch only; never add pull_request or pull_request_target.
-      - uses: sjungwon03/planguard/actions/prepare-ai-review@60da2380a1b94b045362bbede5e30343301dd765
+      - uses: Theorvane/planguard/actions/prepare-ai-review@60da2380a1b94b045362bbede5e30343301dd765
         with:
           working-directory: infrastructure
           output-path: planguard-sanitized-plan.json
@@ -37,7 +37,7 @@ jobs:
         with:
           name: planguard-sanitized-plan
           path: plan-artifact
-      - uses: sjungwon03/planguard/actions/ai-review@60da2380a1b94b045362bbede5e30343301dd765
+      - uses: Theorvane/planguard/actions/ai-review@60da2380a1b94b045362bbede5e30343301dd765
         with:
           api-key: ${{ secrets.PLANGUARD_AI_API_KEY }}
           model: gpt-4.1-mini

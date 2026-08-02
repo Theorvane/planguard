@@ -22,7 +22,7 @@ Choose a provider that meets all of these requirements:
 
 ## 1. Deploy the bootstrap service
 
-1. Create a web service from `sjungwon03/planguard` using the repository `Dockerfile`.
+1. Create a web service from `Theorvane/planguard` using the repository `Dockerfile`.
 2. Configure these non-secret environment variables:
 
    | Key | Value |
@@ -41,9 +41,9 @@ The public URL is needed before the GitHub App can have a valid webhook destinat
 
 ## 2. Register the GitHub App
 
-1. Open `https://github.com/settings/apps/new` while logged in as `sjungwon03`.
+1. Open `https://github.com/settings/apps/new` while logged in as an authorized Theorvane organization owner.
 2. Set the App name to **PlanGuard** (or an available unique variant), Homepage URL to
-   `https://github.com/sjungwon03/planguard`, and webhook URL to:
+   `https://github.com/Theorvane/planguard`, and webhook URL to:
 
    ```text
    API_URL/webhooks/github
@@ -90,7 +90,7 @@ curl --fail "$API_URL/healthz"
    organization Actions secret; never put it in YAML:
 
    ```yaml
-   - uses: sjungwon03/planguard/actions/analyze@main
+   - uses: Theorvane/planguard/actions/analyze@main
      with:
        api-url: API_URL
        api-token: ${{ secrets.PLANGUARD_API_TOKEN }}

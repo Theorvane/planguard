@@ -2,7 +2,7 @@
 
 > Review Terraform changes safely in GitHub Actions, with an optional explanation from your own AI provider.
 
-[![Release](https://img.shields.io/github/v/release/sjungwon03/planguard?display_name=tag&sort=semver)](https://github.com/sjungwon03/planguard/releases/latest)
+[![Release](https://img.shields.io/github/v/release/Theorvane/planguard?display_name=tag&sort=semver)](https://github.com/Theorvane/planguard/releases/latest)
 
 PlanGuard is a GitHub Actions tool for reviewing Terraform plans. It runs in your repository's GitHub runner; it does not require a hosted PlanGuard service, Render deployment, or GitHub App. AI explanations are optional, and the provider API key is supplied only from your GitHub Actions secrets.
 
@@ -59,7 +59,7 @@ jobs:
 
       # Add environment-protected, short-lived, plan-only cloud authentication here.
       # Do not add pull_request or pull_request_target triggers.
-      - uses: sjungwon03/planguard/actions/prepare-ai-review@v1
+      - uses: Theorvane/planguard/actions/prepare-ai-review@v1
         with:
           working-directory: infrastructure # Change to your Terraform directory.
           output-path: planguard-sanitized-plan.json
@@ -80,7 +80,7 @@ jobs:
           name: planguard-sanitized-plan
           path: plan-artifact
 
-      - uses: sjungwon03/planguard@v1
+      - uses: Theorvane/planguard@v1
         with:
           api-key: ${{ secrets.PLANGUARD_AI_API_KEY }}
           model: gpt-4.1-mini
@@ -89,7 +89,7 @@ jobs:
           # api-url: https://your-provider.example/v1/chat/completions
 ```
 
-The example pins `actions/checkout`, `hashicorp/setup-terraform`, and artifact Actions to immutable commit SHAs. PlanGuard offers the stable major tag `@v1`. For stricter supply-chain control, pin the immutable commit from the [v1.0.0 release](https://github.com/sjungwon03/planguard/releases/tag/v1.0.0).
+The example pins `actions/checkout`, `hashicorp/setup-terraform`, and artifact Actions to immutable commit SHAs. PlanGuard offers the stable major tag `@v1`. For stricter supply-chain control, pin the immutable commit from the [v1.0.0 release](https://github.com/Theorvane/planguard/releases/tag/v1.0.0).
 
 ### 3. Run the workflow and read the result
 
@@ -99,7 +99,7 @@ PlanGuard does not send your Terraform binary plan or cloud credentials to the A
 
 ## Inputs
 
-`sjungwon03/planguard@v1` accepts the following inputs.
+`Theorvane/planguard@v1` accepts the following inputs.
 
 | Input | Required | Description |
 | --- | --- | --- |
@@ -132,7 +132,7 @@ The following official public endpoints match that interface as of August 2026. 
 For Google Gemini, use its first-party OpenAI compatibility endpoint:
 
 ```yaml
-      - uses: sjungwon03/planguard@v1
+      - uses: Theorvane/planguard@v1
         with:
           api-key: ${{ secrets.PLANGUARD_AI_API_KEY }} # Google AI API key
           model: gemini-2.5-flash
@@ -143,7 +143,7 @@ For Google Gemini, use its first-party OpenAI compatibility endpoint:
 Anthropic's first-party API uses the Anthropic Messages format rather than the OpenAI Chat Completions format PlanGuard sends. Use Claude through an OpenAI-compatible gateway such as OpenRouter instead, with an OpenRouter key stored in `PLANGUARD_AI_API_KEY` and a Claude model ID available in that account:
 
 ```yaml
-      - uses: sjungwon03/planguard@v1
+      - uses: Theorvane/planguard@v1
         with:
           api-key: ${{ secrets.PLANGUARD_AI_API_KEY }} # OpenRouter key
           model: anthropic/claude-your-enabled-model-id
@@ -154,7 +154,7 @@ Anthropic's first-party API uses the Anthropic Messages format rather than the O
 For example, to use xAI, replace the explanation Action inputs with:
 
 ```yaml
-      - uses: sjungwon03/planguard@v1
+      - uses: Theorvane/planguard@v1
         with:
           api-key: ${{ secrets.PLANGUARD_AI_API_KEY }}
           model: your-enabled-grok-model-id
@@ -176,7 +176,7 @@ OpenAI-compatible endpoints currently require a public IPv4 DNS answer for an HT
 
 ## References
 
-- [Release: v1.0.0](https://github.com/sjungwon03/planguard/releases/tag/v1.0.0)
+- [Release: v1.0.0](https://github.com/Theorvane/planguard/releases/tag/v1.0.0)
 - [Complete workflow example](examples/workflows/ai-terraform-review.yml)
 - [Marketplace publishing and release operations](docs/marketplace/README.md)
 - [Product plan](docs/PRODUCT_PLAN.md) (Korean)

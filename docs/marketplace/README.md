@@ -4,7 +4,7 @@ PlanGuard publishes **PlanGuard BYO-AI Explanation** as a GitHub Marketplace Act
 for `actions/ai-review`, so consumers can use the repository root reference:
 
 ```yaml
-- uses: sjungwon03/planguard@v1
+- uses: Theorvane/planguard@v1
   with:
     api-key: ${{ secrets.PLANGUARD_AI_API_KEY }}
     model: gpt-4.1-mini
@@ -47,7 +47,7 @@ Use the supplied [BYO-AI workflow example](../../examples/workflows/ai-terraform
 default. It follows the same two-job boundary as the Marketplace Action: trusted Terraform preparation produces a
 sanitized artifact, and a separate secret-bearing job sends only that artifact to the AI provider. The example
 pins a full commit SHA for maximum supply-chain control; after publication, consumers can replace only its
-explanation step with `sjungwon03/planguard@v1`. Do not add `pull_request_target`, do not execute unreviewed
+explanation step with `Theorvane/planguard@v1`. Do not add `pull_request_target`, do not execute unreviewed
 Terraform beside cloud credentials, and keep the AI API key in an Actions secret.
 
 Authoritative GitHub documentation: <https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace>
