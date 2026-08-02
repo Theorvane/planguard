@@ -21,7 +21,7 @@ endpoint_host=$(node -e 'const e=JSON.parse(require("node:fs").readFileSync(proc
 endpoint_port=$(node -e 'const e=JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(e.port)' "$endpoint_config")
 endpoint_address=$(node -e 'const e=JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(e.address)' "$endpoint_config")
 
-curl -q --noproxy '*' --fail --silent --show-error \
+curl -q --noproxy '*' --max-filesize 524288 --fail --silent --show-error \
   --resolve "$endpoint_host:$endpoint_port:$endpoint_address" \
   --request POST \
   --header "Authorization: Bearer $INPUT_API_KEY" \

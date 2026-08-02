@@ -29,3 +29,15 @@ test("rejects an oversized sanitized plan before parsing or writing a request", 
   assert.match(result.stderr, /Sanitized Terraform plan exceeds the 512 KiB limit/);
   await assert.rejects(() => stat(request));
 });
+
+test("rejects an oversized model response before parsing or writing a summary", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "planguard-response-limit-"));
+  const response = path.join(directory, "response.json");
+  const summary = path.join(directory, "summary.md");
+  await writeFile(response, " ".repeat(512 * 1024 + 1));
+
+  const result = await run("node", [reviewScript, "summary", response, summary]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /AI provider response exceeds the 512 KiB limit/);
+  await assert.rejects(() => stat(summary));
+});

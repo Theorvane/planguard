@@ -4,6 +4,7 @@ import { readFile, stat, writeFile } from "node:fs/promises";
 
 const MAX_PLAN_BYTES = 512 * 1024;
 const MAX_RAW_PLAN_BYTES = 5 * 1024 * 1024;
+const MAX_RESPONSE_BYTES = 512 * 1024;
 const MAX_RESPONSE_CHARS = 60_000;
 
 const SYSTEM_PROMPT = [
@@ -165,6 +166,6 @@ if (command === "request") {
   await writeFile(outputPath, JSON.stringify(await prepareChatCompletionEndpoint(input)));
 } else if (command === "summary") {
   const [responsePath, summaryPath] = args;
-  const response = JSON.parse(await readFile(responsePath, "utf8"));
+  const response = await readJsonWithinLimit(responsePath, MAX_RESPONSE_BYTES, "AI provider response");
   await writeFile(summaryPath, parseChatCompletionResponse(response));
 }

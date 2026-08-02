@@ -68,6 +68,7 @@ printf '%s' '{"choices":[{"message":{"content":"Needs verification: review the M
   assert.doesNotMatch(`${result.stdout}\n${result.stderr}\n${summary}`, /secret-api-key-must-not-leak|old-rotated-secret|new-rotated-secret/);
   assert.match(curlArgs, /^-q$/m);
   assert.match(curlArgs, /^--noproxy\n\*$/m);
+  assert.match(curlArgs, /^--max-filesize\n524288$/m);
   assert.match(curlArgs, /^--resolve\napi\.openai\.com:443:/m);
   assert.match(summary, /PlanGuard AI explanation/);
   assert.match(summary, /Needs verification:/);
