@@ -38,7 +38,9 @@ PlanGuard helps people approve infrastructure changes safely.
 Phase 1 foundation is implemented: Terraform plan normalization, deterministic AWS policy findings,
 risk scoring, GitHub App webhook/Check Run primitives, a token-protected Terraform plan upload API, and a
 composite Actions that create plans inside repository CI. The **BYO-AI Action** lets a repository use its
-own OpenAI-compatible API key with no PlanGuard-hosted service; copy
-[`examples/workflows/ai-terraform-review.yml`](examples/workflows/ai-terraform-review.yml) to begin.
+own OpenAI-compatible API key with no PlanGuard-hosted service; use the root Action as
+`sjungwon03/planguard@v1` after its first Marketplace release, or copy the secure
+[`examples/workflows/ai-terraform-review.yml`](examples/workflows/ai-terraform-review.yml) to begin. The
+Marketplace release checklist is in [`docs/marketplace/README.md`](docs/marketplace/README.md).
 The container deployment/GitHub App path remains optional. The worker, web dashboard, external policy
 scanners, cost estimation, persistence, and Marketplace workflow remain planned.
