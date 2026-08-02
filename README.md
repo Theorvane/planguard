@@ -119,12 +119,37 @@ The following official public endpoints match that interface as of August 2026. 
 | Provider | Example `model` | `api-url` setting |
 | --- | --- | --- |
 | OpenAI | `gpt-4.1-mini` | Omit it; this is the default `https://api.openai.com/v1/chat/completions`. |
+| Google Gemini | A Gemini Chat Completions model ID enabled for your Google AI account, such as `gemini-2.5-flash` | `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` |
+| Claude (Anthropic) via OpenRouter | An available OpenRouter Claude model ID, such as `anthropic/claude-...` | `https://openrouter.ai/api/v1/chat/completions` |
+| Gemini via OpenRouter | An available OpenRouter Gemini model ID, such as `google/gemini-...` | `https://openrouter.ai/api/v1/chat/completions` |
 | xAI (Grok) | A Grok chat model ID enabled for your xAI account | `https://api.x.ai/v1/chat/completions` |
 | OpenRouter | A routed model ID such as `openai/gpt-4.1-mini` | `https://openrouter.ai/api/v1/chat/completions` |
 | Groq | A Groq chat model ID enabled for your account | `https://api.groq.com/openai/v1/chat/completions` |
 | Together AI | A Together chat model ID enabled for your account | `https://api.together.xyz/v1/chat/completions` |
 | Mistral AI | A Mistral chat model ID enabled for your account | `https://api.mistral.ai/v1/chat/completions` |
 | DeepSeek | A DeepSeek chat model ID enabled for your account | `https://api.deepseek.com/chat/completions` |
+
+For Google Gemini, use its first-party OpenAI compatibility endpoint:
+
+```yaml
+      - uses: sjungwon03/planguard@v1
+        with:
+          api-key: ${{ secrets.PLANGUARD_AI_API_KEY }} # Google AI API key
+          model: gemini-2.5-flash
+          plan-json-path: plan-artifact/planguard-sanitized-plan.json
+          api-url: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+```
+
+Anthropic's first-party API uses the Anthropic Messages format rather than the OpenAI Chat Completions format PlanGuard sends. Use Claude through an OpenAI-compatible gateway such as OpenRouter instead, with an OpenRouter key stored in `PLANGUARD_AI_API_KEY` and a Claude model ID available in that account:
+
+```yaml
+      - uses: sjungwon03/planguard@v1
+        with:
+          api-key: ${{ secrets.PLANGUARD_AI_API_KEY }} # OpenRouter key
+          model: anthropic/claude-your-enabled-model-id
+          plan-json-path: plan-artifact/planguard-sanitized-plan.json
+          api-url: https://openrouter.ai/api/v1/chat/completions
+```
 
 For example, to use xAI, replace the explanation Action inputs with:
 
@@ -139,7 +164,7 @@ For example, to use xAI, replace the explanation Action inputs with:
 
 Provider model catalogs, account access, quotas, regional availability, and pricing are controlled by the provider and can change independently of PlanGuard. This table documents API-shape compatibility, not a guarantee that every model offered by a provider is available to every account. Use a non-production plan first when onboarding a new provider.
 
-Official provider references: [OpenAI Chat Completions](https://developers.openai.com/api/reference/chat-completions/overview), [xAI Chat API](https://docs.x.ai/developers/rest-api-reference/inference/chat.md), [OpenRouter Chat Completions](https://openrouter.ai/docs/api/api-reference/chat/create-a-chat-completion), [Groq OpenAI compatibility](https://console.groq.com/docs/openai), [Together AI compatibility](https://docs.together.ai/docs/inference/openai-compatibility), [Mistral Chat Completions](https://docs.mistral.ai/studio-api/conversations/chat-completion), and [DeepSeek API compatibility](https://api-docs.deepseek.com/).
+Official provider references: [OpenAI Chat Completions](https://developers.openai.com/api/reference/chat-completions/overview), [Google Gemini OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai), [Anthropic API getting started](https://docs.anthropic.com/api/getting-started), [OpenRouter models](https://openrouter.ai/docs/guides/overview/models), [xAI Chat API](https://docs.x.ai/developers/rest-api-reference/inference/chat.md), [OpenRouter Chat Completions](https://openrouter.ai/docs/api/api-reference/chat/create-a-chat-completion), [Groq OpenAI compatibility](https://console.groq.com/docs/openai), [Together AI compatibility](https://docs.together.ai/docs/inference/openai-compatibility), [Mistral Chat Completions](https://docs.mistral.ai/studio-api/conversations/chat-completion), and [DeepSeek API compatibility](https://api-docs.deepseek.com/).
 
 ## Security model and limitations
 
