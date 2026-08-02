@@ -59,7 +59,7 @@ export async function runAnalysis(
     request.riskConfig,
   );
 
-  const summary = buildSummary(risk, {
+  const summary = buildAnalysisSummary(risk, {
     resourceChanges,
     securityFindings,
     availabilityFindings,
@@ -77,7 +77,7 @@ export async function runAnalysis(
   return { risk, summary };
 }
 
-function buildSummary(
+export function buildAnalysisSummary(
   risk: RiskResult,
   context: {
     resourceChanges: ReturnType<typeof parseTerraformPlan>;

@@ -8,6 +8,7 @@ const deliveryLog = createInMemoryDeliveryLog();
 
 const server = createApiServer({
   webhookSecret: config.webhookSecret,
+  planUploadToken: config.planUploadToken,
   deliveryLog,
   clientForInstallation: async (installationId) => {
     const token = await getInstallationToken(

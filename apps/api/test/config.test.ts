@@ -6,6 +6,7 @@ const VALID = {
   PLANGUARD_GITHUB_APP_ID: "12345",
   PLANGUARD_GITHUB_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\nabc\n-----END RSA PRIVATE KEY-----",
   PLANGUARD_GITHUB_WEBHOOK_SECRET: "s3cret",
+  PLANGUARD_API_TOKEN: "upload-token",
 };
 
 test("loads a complete configuration", () => {
@@ -20,6 +21,10 @@ test("a missing webhook secret is a startup error, never a skipped check", () =>
     () => loadConfig({ ...VALID, PLANGUARD_GITHUB_WEBHOOK_SECRET: "" }),
     /PLANGUARD_GITHUB_WEBHOOK_SECRET/,
   );
+});
+
+test("a missing upload token is a startup error", () => {
+  assert.throws(() => loadConfig({ ...VALID, PLANGUARD_API_TOKEN: "" }), /PLANGUARD_API_TOKEN/);
 });
 
 test("reports every missing variable at once", () => {
