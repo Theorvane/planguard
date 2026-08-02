@@ -2,7 +2,7 @@ services:
   - type: web
     name: planguard-api
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /healthz
     autoDeployTrigger: commit
     envVars:

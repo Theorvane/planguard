@@ -15,7 +15,9 @@ uses a **health-only bootstrap deployment** first, so no fabricated GitHub App c
 
 1. Sign in at [Render](https://dashboard.render.com/) using the `sjungwon03` GitHub account.
 2. Select **New → Blueprint**, choose `sjungwon03/planguard`, branch `main`, and approve `render.yaml`.
-3. Wait for the `planguard-api` service to become live. Record its generated HTTPS URL, called `API_URL`
+3. Wait for the `planguard-api` service to become live. The Blueprint uses Render's free instance type;
+   it can spin down while idle and has a cold-start delay. GitHub retries failed webhook deliveries, but
+   do not use this tier for latency-sensitive production enforcement. Record its generated HTTPS URL, called `API_URL`
    below. Verify in a browser or terminal:
 
    ```bash
