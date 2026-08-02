@@ -19,15 +19,20 @@ the plan, Terraform state, the binary plan, or your provider credentials.
 | `api-url` | no | HTTPS chat-completions endpoint. Defaults to `https://api.openai.com/v1/chat/completions`. |
 | `working-directory` | no | Terraform configuration directory; defaults to `.`. |
 
-The endpoint must be HTTPS, and URLs with embedded credentials, query parameters, or fragments are rejected.
+The endpoint must be HTTPS and resolve only to public Internet addresses. URLs with embedded credentials, query
+parameters, or fragments are rejected; private, loopback, and link-local endpoints are not supported because
+an untrusted pull request must not be able to direct the API key at runner-local services.
 
 ## Add it to a repository
 
 1. Add an Actions secret named `PLANGUARD_AI_API_KEY` in **Settings → Secrets and variables → Actions**.
 2. Copy [`../../examples/workflows/ai-terraform-review.yml`](../../examples/workflows/ai-terraform-review.yml)
    to the repository that owns the Terraform configuration, at `.github/workflows/ai-terraform-review.yml`.
-3. Configure cloud authentication in that workflow using short-lived credentials/OIDC. The Action does not
-   receive those credentials, but Terraform needs them to create a plan.
+   The example pins every action to an immutable commit SHA. Keep these pins; update them only after reviewing
+   the upstream release and commit SHA (Dependabot can propose the change).
+3. Configure cloud authentication in that workflow using short-lived credentials/OIDC. Terraform needs those
+   credentials to create a plan. Keep cloud credentials scoped to the minimum permissions required by the
+   Terraform configuration.
 4. Open an internal pull request and read the **PlanGuard AI explanation** in the step summary.
 
 ## Fork and secret safety
