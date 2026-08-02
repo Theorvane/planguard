@@ -12,7 +12,10 @@ COPY packages/github-client/package.json packages/github-client/package.json
 RUN npm ci
 
 COPY . .
-RUN npm run build && npm prune --omit=dev
+RUN npm run build \
+  && find apps packages -type d -path '*/dist/test' -prune -exec rm -rf {} + \
+  && find . -name '*.tsbuildinfo' -delete \
+  && npm prune --omit=dev
 
 FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
