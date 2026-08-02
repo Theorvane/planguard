@@ -1,0 +1,29 @@
+name: PlanGuard BYO-AI Explanation
+description: Explain a pre-sanitized Terraform plan with your OpenAI-compatible provider. Does not calculate policy, risk, or approval verdicts.
+branding:
+  icon: shield
+  color: purple
+inputs:
+  api-key:
+    description: Your OpenAI-compatible provider API key. Pass this from a GitHub Actions secret.
+    required: true
+  model:
+    description: Model identifier accepted by the provider.
+    required: true
+  plan-json-path:
+    description: Path to a Terraform plan JSON that was sanitized in a separate trusted job.
+    required: true
+  api-url:
+    description: HTTPS OpenAI-compatible chat-completions endpoint.
+    required: false
+    default: https://api.openai.com/v1/chat/completions
+runs:
+  using: composite
+  steps:
+    - name: Generate explanation from sanitized plan
+      uses: ./actions/ai-review
+      with:
+        api-key: ${{ inputs.api-key }}
+        model: ${{ inputs.model }}
+        plan-json-path: ${{ inputs.plan-json-path }}
+        api-url: ${{ inputs.api-url }}
