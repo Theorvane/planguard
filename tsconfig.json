@@ -4,5 +4,12 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": [".agents/**/*.ts"]
+  "include": [".agents/**/*.ts"],
+  "references": [
+    { "path": "./packages/schemas" },
+    { "path": "./packages/terraform-parser" },
+    { "path": "./packages/risk-engine" },
+    { "path": "./packages/github-client" },
+    { "path": "./apps/api" }
+  ]
 }
