@@ -31,6 +31,7 @@ function toResourceChange(raw: TerraformResourceChangeJson): ResourceChange {
     changedFields: shouldDiff(action)
       ? diffFields(before, after, after_unknown, before_sensitive, after_sensitive)
       : [],
+    after: redactObject(after ?? {}, after_sensitive),
     replacementRequired: isReplace(actions),
   };
 }
@@ -94,6 +95,22 @@ function isSensitiveField(
   if (sensitive === true) return true;
   if (!sensitive) return false;
   return Boolean(sensitive[key]);
+}
+
+function redactObject(
+  value: Readonly<Record<string, unknown>>,
+  sensitive: Readonly<Record<string, unknown>> | boolean | undefined,
+): Readonly<Record<string, unknown>> {
+  if (sensitive === true) {
+    return Object.fromEntries(Object.keys(value).map((key) => [key, REDACTED]));
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, fieldValue]) => [
+      key,
+      isSensitiveField(sensitive, key) ? REDACTED : fieldValue,
+    ]),
+  );
 }
 
 function deepEqual(a: unknown, b: unknown): boolean {

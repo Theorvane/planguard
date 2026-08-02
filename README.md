@@ -35,5 +35,7 @@ PlanGuard helps people approve infrastructure changes safely.
 
 ## Current status
 
-Planning stage. The repository structure and implementation will follow the development phases in
-the [product plan](docs/PRODUCT_PLAN.md).
+Phase 1 foundation is implemented: Terraform plan normalization, deterministic AWS policy findings,
+risk scoring, GitHub App webhook/Check Run primitives, and a no-credential type-chain harness.
+The GitHub Action, worker, web dashboard, external policy scanners, cost estimation, persistence, and
+Marketplace workflow remain planned.

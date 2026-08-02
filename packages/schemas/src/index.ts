@@ -24,6 +24,8 @@ export interface ResourceChange {
   readonly resourceType: string;
   readonly action: ResourceAction;
   readonly changedFields: ReadonlyArray<ChangedField>;
+  /** Sanitized post-change attributes for deterministic policies that need unchanged context. */
+  readonly after?: Readonly<Record<string, unknown>>;
   readonly replacementRequired: boolean;
 }
 

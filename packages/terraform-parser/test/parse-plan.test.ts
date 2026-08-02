@@ -33,6 +33,17 @@ test("update: redacts fields marked sensitive by Terraform", () => {
   assert.equal(password?.after, "(sensitive value hidden)");
 });
 
+test("update: preserves a redacted after-state snapshot for deterministic policy checks", () => {
+  const [change] = parseTerraformPlan(loadFixture("rds-multi-az-disable.json"));
+
+  assert.deepEqual(change.after, {
+    id: "db-abc123",
+    multi_az: false,
+    instance_class: "db.t3.medium",
+    password: "(sensitive value hidden)",
+  });
+});
+
 test("update: surfaces a widened security group CIDR", () => {
   const [change] = parseTerraformPlan(loadFixture("sg-open-ssh.json"));
 
