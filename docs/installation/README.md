@@ -1,31 +1,95 @@
-# docs/installation
+# PlanGuard public deployment and GitHub App registration
 
-설치 가이드 (GitHub Marketplace 설치, 저장소 선택, Terraform 경로/환경/정책 설정, 테스트 PR 분석).
+This runbook takes PlanGuard from this public repository to an installable GitHub App. It intentionally
+uses a **health-only bootstrap deployment** first, so no fabricated GitHub App credentials are deployed.
 
-- 스펙: [docs/PRODUCT_PLAN.md #5 시나리오 A: 최초 설치](../PRODUCT_PLAN.md#시나리오-a-최초-설치)
-- 준비물 목록: [docs/PRODUCT_PLAN.md #17 3단계: Marketplace Free Listing](../PRODUCT_PLAN.md#3단계-marketplace-free-listing)
-- 상태: 최종 사용자용 설치 문서는 미작성 (Phase 5). 아래는 개발자가 GitHub App을 직접 등록하기 위한 안내.
+## Security boundary
 
-## GitHub App 등록 (개발자용)
+- Bootstrap mode serves only `GET /healthz`; it returns `503` for webhooks and plan uploads.
+- Active mode requires all four secrets below; startup fails if any are missing.
+- Store values in Render's encrypted environment settings only. Do not commit a `.pem`, `.env`,
+  webhook secret, or upload token.
+- GitHub webhook SSL verification remains enabled.
 
-`app-manifest.json`은 [docs/PRODUCT_PLAN.md #10](../PRODUCT_PLAN.md#10-github-app-권한)의 최소 권한
-설계를 그대로 담고 있다. `Issues: write`는 초기 설치 장벽을 낮추기 위해 의도적으로 제외했다 —
-결과는 GitHub Check로만 전달한다.
+## 1. Deploy the bootstrap service in Render
 
-앱 등록은 브라우저에서 사람이 직접 해야 한다:
+1. Sign in at [Render](https://dashboard.render.com/) using the `sjungwon03` GitHub account.
+2. Select **New → Blueprint**, choose `sjungwon03/planguard`, branch `main`, and approve `render.yaml`.
+3. Wait for the `planguard-api` service to become live. Record its generated HTTPS URL, called `API_URL`
+   below. Verify in a browser or terminal:
 
-1. https://github.com/settings/apps/new 에서 새 App을 만들고 `app-manifest.json`의 권한·이벤트를 그대로 설정한다.
-   (또는 [App manifest flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest)로 이 파일을 그대로 POST한다.)
-2. Webhook URL을 PlanGuard API의 `/webhooks/github`로 지정하고 **Webhook secret**을 생성한다.
-3. 생성 후 **App ID**와 **private key(.pem)** 를 발급받는다.
-4. 이 값들을 `.env`에 넣는다 — `.pem`과 `.env`는 절대 커밋하지 않는다
-   (`.gitignore`와 `.agents/hooks/block-secrets.sh`가 막는다).
+   ```bash
+   curl --fail "$API_URL/healthz"
+   # {"status":"bootstrap"}
+   ```
+
+The public URL is needed before the GitHub App can have a valid webhook destination.
+
+## 2. Register the GitHub App
+
+1. Open `https://github.com/settings/apps/new` while logged in as `sjungwon03`.
+2. Set the App name to **PlanGuard** (or an available unique variant), Homepage URL to
+   `https://github.com/sjungwon03/planguard`, and webhook URL to:
+
+   ```text
+   API_URL/webhooks/github
+   ```
+
+3. Enable **Active** webhooks and keep SSL verification enabled.
+4. Copy the repository permissions and events from `app-manifest.json` exactly:
+   Metadata read, Contents read, Pull requests read, Checks write, Actions read; and the
+   `installation`, `installation_repositories`, `pull_request`, `push`, `check_run` events.
+5. Generate a webhook secret, then create the app. On the app settings page, generate and download a
+   private key. Record its App ID.
+
+## 3. Activate PlanGuard in Render
+
+In **Render → planguard-api → Environment**, replace the bootstrap setting and add these secrets:
+
+| Key | Value |
+| --- | --- |
+| `PLANGUARD_BOOTSTRAP_MODE` | `false` (or remove it) |
+| `PLANGUARD_GITHUB_APP_ID` | App ID from GitHub |
+| `PLANGUARD_GITHUB_PRIVATE_KEY` | full PEM contents; Render may use real newlines or `\\n` escapes |
+| `PLANGUARD_GITHUB_WEBHOOK_SECRET` | secret created in GitHub |
+| `PLANGUARD_API_TOKEN` | a fresh high-entropy token generated locally |
+
+Generate the upload token without putting it in shell history:
 
 ```bash
-PLANGUARD_GITHUB_APP_ID=
-PLANGUARD_GITHUB_PRIVATE_KEY=
-PLANGUARD_GITHUB_WEBHOOK_SECRET=
+openssl rand -base64 48
 ```
 
-권한을 나중에 확대하면 기존 설치 사용자가 모두 재승인해야 하므로, 등록 전에
-[#10 권한 설계](../PRODUCT_PLAN.md#10-github-app-권한)를 다시 확인한다.
+Save the configuration. Render redeploys automatically. Then verify:
+
+```bash
+curl --fail "$API_URL/healthz"
+# {"status":"ok"}
+```
+
+## 4. Install and verify the App
+
+1. In the GitHub App settings page choose **Public page → Make public** when the App is ready for general
+   installation. Until then, install it only on selected test repositories.
+2. Install the App and select only repositories that need PlanGuard.
+3. On an installed Terraform repository, add the action. Save `PLANGUARD_API_TOKEN` as a repository or
+   organization Actions secret; never put it in YAML:
+
+   ```yaml
+   - uses: sjungwon03/planguard/actions/analyze@main
+     with:
+       api-url: API_URL
+       api-token: ${{ secrets.PLANGUARD_API_TOKEN }}
+       working-directory: infrastructure
+   ```
+
+4. Open a test pull request and confirm GitHub shows a queued/completed **PlanGuard / Infrastructure Review**
+   check. In the GitHub App's Advanced page, inspect webhook deliveries; a valid delivery returns `2xx`.
+
+## Operational checks and rollback
+
+- Render health failure: inspect Render logs, restore `PLANGUARD_BOOTSTRAP_MODE=true`, and redeploy. This
+  closes analysis endpoints while keeping the public health URL stable.
+- Suspected secret exposure: rotate the GitHub App private key, webhook secret, and `PLANGUARD_API_TOKEN`;
+  update Render and all affected GitHub Actions secrets together.
+- Do not disable webhook signature verification. A missing secret is deliberately a startup error in active mode.
