@@ -13,7 +13,8 @@ function analyzePublicSsh(resourceChange: ResourceChange): Finding[] {
   if (
     resourceChange.resourceType !== "aws_security_group_rule" ||
     !isManagedChangeAction(resourceChange.action) ||
-    !includesPort(resourceChange, 22) ||
+    !opensSshProtocol(resourceChange) ||
+    !includesSshPort(resourceChange) ||
     !changedToPublicCidr(resourceChange)
   ) {
     return [];
@@ -62,11 +63,17 @@ function isChangeAction(action: ResourceChange["action"]): boolean {
   return action === "update" || action === "replace";
 }
 
-function includesPort(resourceChange: ResourceChange, port: number): boolean {
-  return (
-    includesNumber(valueAfter(resourceChange, "from_port"), port) &&
-    includesNumber(valueAfter(resourceChange, "to_port"), port)
-  );
+function opensSshProtocol(resourceChange: ResourceChange): boolean {
+  const protocol = valueAfter(resourceChange, "protocol");
+  return protocol === "tcp" || protocol === "-1";
+}
+
+function includesSshPort(resourceChange: ResourceChange): boolean {
+  if (valueAfter(resourceChange, "protocol") === "-1") return true;
+
+  const fromPort = valueAfter(resourceChange, "from_port");
+  const toPort = valueAfter(resourceChange, "to_port");
+  return typeof fromPort === "number" && typeof toPort === "number" && fromPort <= 22 && 22 <= toPort;
 }
 
 function changedToPublicCidr(resourceChange: ResourceChange): boolean {
@@ -79,10 +86,6 @@ function valueAfter(resourceChange: ResourceChange, field: string): unknown {
 
 function findChangedField(resourceChange: ResourceChange, field: string) {
   return resourceChange.changedFields.find((changedField) => changedField.field === field);
-}
-
-function includesNumber(value: unknown, expected: number): boolean {
-  return value === expected || (Array.isArray(value) && value.includes(expected));
 }
 
 function includesString(value: unknown, expected: string): boolean {

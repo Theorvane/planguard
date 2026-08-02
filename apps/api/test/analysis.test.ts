@@ -45,8 +45,8 @@ const OPEN_SSH: TerraformPlanJson = {
       provider_name: "registry.terraform.io/hashicorp/aws",
       change: {
         actions: ["update"],
-        before: { cidr_blocks: ["10.0.0.0/8"], from_port: 22, to_port: 22 },
-        after: { cidr_blocks: ["0.0.0.0/0"], from_port: 22, to_port: 22 },
+        before: { cidr_blocks: ["10.0.0.0/8"], from_port: 22, to_port: 22, protocol: "tcp" },
+        after: { cidr_blocks: ["0.0.0.0/0"], from_port: 22, to_port: 22, protocol: "tcp" },
       },
     },
   ],
@@ -59,6 +59,15 @@ const CRITICAL_AVAILABILITY: Finding = {
   evidence: "multi_az true -> false",
   source: "planguard:PG-AVAILABILITY-RDS-MULTI-AZ",
   recommendation: "Keep multi_az enabled in production.",
+};
+
+const EXTERNAL_SECURITY: Finding = {
+  category: "security",
+  severity: "moderate",
+  title: "External scanner finding",
+  evidence: "Scanner evidence.",
+  source: "checkov:CKV_AWS_000",
+  recommendation: "Review the external scanner finding.",
 };
 
 const BASE = { owner: "acme", repo: "api-infra", checkRunId: 42 };
@@ -119,6 +128,21 @@ test("derives a critical failed Check from the RDS Multi-AZ policy", async () =>
   assert.equal(calls[0]?.options.conclusion, "failure");
   assert.match(summary, /RDS Multi-AZ is being disabled/);
   assert.doesNotMatch(summary, /not enabled yet/);
+});
+
+test("merges deterministic policy findings with normalized external findings", async () => {
+  const { client } = recordingClient();
+
+  const { summary } = await runAnalysis(client, {
+    ...BASE,
+    plan: MULTI_AZ_DISABLED,
+    securityFindings: [EXTERNAL_SECURITY],
+  });
+
+  assert.match(summary, /Security findings: 1/);
+  assert.match(summary, /Availability findings: 1/);
+  assert.match(summary, /External scanner finding/);
+  assert.match(summary, /RDS Multi-AZ is being disabled/);
 });
 
 test("derives a high security finding when a plan exposes SSH without changing its port", async () => {

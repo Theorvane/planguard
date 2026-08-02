@@ -12,6 +12,7 @@ const OPEN_SSH: ResourceChange = {
     { field: "cidr_blocks", before: ["10.0.0.0/8"], after: ["0.0.0.0/0"] },
     { field: "from_port", before: 22, after: 22 },
     { field: "to_port", before: 22, after: 22 },
+    { field: "protocol", before: "tcp", after: "tcp" },
   ],
 };
 
@@ -37,6 +38,48 @@ test("reports public SSH exposure with a stable high-severity security finding",
       recommendation: "Restrict SSH access to a VPN or trusted administrative CIDR.",
     },
   ]);
+});
+
+test("reports public TCP ranges that include SSH", () => {
+  const range = {
+    ...OPEN_SSH,
+    changedFields: [
+      { field: "cidr_blocks", before: ["10.0.0.0/8"], after: ["0.0.0.0/0"] },
+      { field: "from_port", before: 20, after: 20 },
+      { field: "to_port", before: 22, after: 22 },
+      { field: "protocol", before: "tcp", after: "tcp" },
+    ],
+  };
+
+  assert.equal(analyzePolicies([range]).length, 1);
+});
+
+test("does not treat UDP or TCP ranges outside port 22 as SSH", () => {
+  const udp = {
+    ...OPEN_SSH,
+    changedFields: OPEN_SSH.changedFields.map((field) =>
+      field.field === "protocol" ? { ...field, after: "udp" } : field,
+    ),
+  };
+  const outsideRange = {
+    ...OPEN_SSH,
+    changedFields: OPEN_SSH.changedFields.map((field) =>
+      field.field === "from_port" ? { ...field, after: 23 } : field,
+    ),
+  };
+
+  assert.deepEqual(analyzePolicies([udp, outsideRange]), []);
+});
+
+test("treats an all-protocol public rule as including SSH", () => {
+  const allProtocols = {
+    ...OPEN_SSH,
+    changedFields: OPEN_SSH.changedFields.map((field) =>
+      field.field === "protocol" ? { ...field, after: "-1" } : field,
+    ),
+  };
+
+  assert.equal(analyzePolicies([allProtocols]).length, 1);
 });
 
 test("does not report SSH policy findings for non-public or non-SSH changes", () => {
