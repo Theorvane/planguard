@@ -2,26 +2,25 @@ name: PlanGuard BYO-AI Terraform Review
 description: Create a local Terraform plan, redact Terraform-marked sensitive values, and ask your OpenAI-compatible model to explain it.
 inputs:
   api-key:
-    description: API key from a GitHub Actions secret. It is never written to logs, outputs, or summaries.
+    description: "Your OpenAI-compatible provider API key. Pass from GitHub Secrets."
     required: true
   model:
-    description: OpenAI-compatible chat model identifier.
+    description: "Model identifier accepted by the provider."
+    required: true
+  plan-json-path:
+    description: "Path to a Terraform plan JSON already sanitized in a separate, untrusted job."
     required: true
   api-url:
-    description: HTTPS OpenAI-compatible chat-completions endpoint.
+    description: "HTTPS OpenAI-compatible chat-completions endpoint."
     required: false
-    default: https://api.openai.com/v1/chat/completions
-  working-directory:
-    description: Directory containing Terraform configuration.
-    required: false
-    default: .
+    default: "https://api.openai.com/v1/chat/completions"
 runs:
   using: composite
   steps:
     - shell: bash
-      run: ${{ github.action_path }}/scripts/analyze.sh
       env:
         INPUT_API_KEY: ${{ inputs.api-key }}
         INPUT_MODEL: ${{ inputs.model }}
         INPUT_API_URL: ${{ inputs.api-url }}
-        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_PLAN_JSON_PATH: ${{ inputs.plan-json-path }}
+      run: ${{ github.action_path }}/scripts/explain.sh

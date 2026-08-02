@@ -1,0 +1,19 @@
+name: PlanGuard Prepare Sanitized Terraform Plan
+description: Create a Terraform plan and write a Terraform-sensitive-value-redacted JSON file for a separate AI explanation job.
+inputs:
+  working-directory:
+    description: "Terraform configuration directory."
+    required: false
+    default: "."
+  output-path:
+    description: "Output path for the sanitized Terraform plan JSON."
+    required: false
+    default: "planguard-sanitized-plan.json"
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_OUTPUT_PATH: ${{ inputs.output-path }}
+      run: ${{ github.action_path }}/scripts/prepare.sh

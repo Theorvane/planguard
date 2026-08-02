@@ -1,8 +1,9 @@
 # PlanGuard BYO-AI Terraform Review Action
 
-Use this composite Action when you do **not** want to run the PlanGuard API or GitHub App. It creates a
-Terraform plan in your GitHub Actions runner, replaces values marked sensitive by Terraform with
-`[REDACTED]`, then asks an **OpenAI-compatible** chat-completions API that you choose to explain the plan.
+Use the paired composite Actions when you do **not** want to run the PlanGuard API or GitHub App.
+`prepare-ai-review` executes Terraform and creates a sensitive-value-redacted plan artifact in a job with **no
+AI API key**. `ai-review` runs in a separate fresh job, downloads only that artifact, and asks an
+**OpenAI-compatible** chat-completions API that you choose to explain it.
 
 The API key is supplied by your repository's GitHub Actions secret. PlanGuard does not receive the key,
 the plan, Terraform state, the binary plan, or your provider credentials.
@@ -16,8 +17,8 @@ the plan, Terraform state, the binary plan, or your provider credentials.
 |---|---:|---|
 | `api-key` | yes | GitHub Actions secret for your model provider. Never print this value. |
 | `model` | yes | OpenAI-compatible chat model identifier, for example `gpt-4.1-mini`. |
+| `plan-json-path` | yes | Downloaded, already-sanitized Terraform plan artifact path. |
 | `api-url` | no | HTTPS chat-completions endpoint. Defaults to `https://api.openai.com/v1/chat/completions`. |
-| `working-directory` | no | Terraform configuration directory; defaults to `.`. |
 
 The endpoint must be HTTPS and resolve to public **IPv4** addresses. IPv6-only model endpoints are intentionally
 unsupported in this version. URLs with embedded credentials, query parameters, or fragments are rejected; private,
