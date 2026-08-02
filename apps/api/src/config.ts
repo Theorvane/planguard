@@ -2,6 +2,8 @@ export interface ApiConfig {
   readonly appId: string;
   readonly privateKey: string;
   readonly webhookSecret: string;
+  /** Shared secret accepted by the Terraform plan upload endpoint. */
+  readonly planUploadToken: string;
   readonly port: number;
 }
 
@@ -27,6 +29,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const appId = read("PLANGUARD_GITHUB_APP_ID");
   const privateKey = read("PLANGUARD_GITHUB_PRIVATE_KEY");
   const webhookSecret = read("PLANGUARD_GITHUB_WEBHOOK_SECRET");
+  const planUploadToken = read("PLANGUARD_API_TOKEN");
 
   if (missing.length > 0) {
     throw new Error(
@@ -41,5 +44,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   }
 
   // Private keys are commonly stored in env with literal \n rather than real newlines.
-  return { appId, privateKey: privateKey.replace(/\\n/g, "\n"), webhookSecret, port };
+  return {
+    appId,
+    privateKey: privateKey.replace(/\\n/g, "\n"),
+    webhookSecret,
+    planUploadToken,
+    port,
+  };
 }

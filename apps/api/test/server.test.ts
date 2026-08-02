@@ -16,8 +16,13 @@ const client: RequestClient = {
   },
 };
 
+const UPLOAD_TOKEN = "plan-upload-test-token";
+
+const EMPTY_PLAN = { format_version: "1.2", resource_changes: [] };
+
 const server = createApiServer({
   webhookSecret: SECRET,
+  planUploadToken: UPLOAD_TOKEN,
   deliveryLog: createInMemoryDeliveryLog(),
   clientForInstallation: async () => client,
 });
@@ -44,6 +49,60 @@ test("GET /healthz reports ok", async () => {
 
 test("unknown routes return 404", async () => {
   assert.equal((await fetch(`${baseUrl}/nope`)).status, 404);
+});
+
+test("rejects missing or invalid bearer authentication for plan upload", async () => {
+  for (const authorization of [undefined, "Bearer wrong", "Basic anything"]) {
+    const response = await fetch(`${baseUrl}/analysis/terraform-plan`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(authorization === undefined ? {} : { authorization }),
+      },
+      body: JSON.stringify(EMPTY_PLAN),
+    });
+
+    assert.equal(response.status, 401);
+    assert.deepEqual(await response.json(), { message: "Unauthorized." });
+  }
+});
+
+test("analyzes an authenticated Terraform plan without making a GitHub request", async () => {
+  const beforeCalls = calls.length;
+  const response = await fetch(`${baseUrl}/analysis/terraform-plan`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${UPLOAD_TOKEN}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(EMPTY_PLAN),
+  });
+
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as { risk: unknown; summary: unknown };
+  assert.deepEqual(body.risk, { score: 0, level: "Low", conclusion: "success" });
+  const summary = body.summary;
+  assert.equal(typeof summary, "string");
+  if (typeof summary !== "string") throw new Error("Expected string summary.");
+  assert.match(summary, /Risk score: 0\/100/);
+  assert.equal(calls.length, beforeCalls);
+});
+
+test("rejects malformed and oversized authenticated plan uploads", async () => {
+  const headers = { authorization: `Bearer ${UPLOAD_TOKEN}`, "content-type": "application/json" };
+  const malformed = await fetch(`${baseUrl}/analysis/terraform-plan`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ resource_changes: [] }),
+  });
+  assert.equal(malformed.status, 400);
+
+  const oversized = await fetch(`${baseUrl}/analysis/terraform-plan`, {
+    method: "POST",
+    headers,
+    body: "x".repeat(5 * 1024 * 1024 + 1),
+  });
+  assert.equal(oversized.status, 413);
 });
 
 test("a signed pull_request delivery reaches the handler over HTTP", async () => {
