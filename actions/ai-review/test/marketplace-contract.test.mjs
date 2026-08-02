@@ -6,7 +6,8 @@ const rootAction = await readFile(new URL("../../../action.yml", import.meta.url
 
 test("exposes a Marketplace-compatible root wrapper for the secure explanation Action", () => {
   assert.match(rootAction, /^name: PlanGuard BYO-AI Explanation$/m);
-  assert.match(rootAction, /^description: .+/m);
+  const description = rootAction.match(/^description: (.+)$/m)?.[1] ?? "";
+  assert.ok(description.length > 0 && description.length < 125, "Marketplace description must be under 125 characters");
   assert.match(rootAction, /^branding:\n  icon: shield\n  color: purple$/m);
   assert.match(rootAction, /^runs:\n  using: composite$/m);
   assert.match(rootAction, /shell: bash/);

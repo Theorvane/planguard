@@ -1,5 +1,5 @@
 name: PlanGuard BYO-AI Explanation
-description: Explain a pre-sanitized Terraform plan with your OpenAI-compatible provider. Does not calculate policy, risk, or approval verdicts.
+description: Explain a sanitized Terraform plan with your OpenAI-compatible AI provider.
 branding:
   icon: shield
   color: purple
