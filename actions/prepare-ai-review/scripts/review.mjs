@@ -1,8 +1,9 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 
 const MAX_PLAN_BYTES = 512 * 1024;
+const MAX_RAW_PLAN_BYTES = 5 * 1024 * 1024;
 const MAX_RESPONSE_CHARS = 60_000;
 
 const SYSTEM_PROMPT = [
@@ -134,15 +135,31 @@ export function parseChatCompletionResponse(response) {
   return content.trim();
 }
 
+async function readJsonWithinLimit(filePath, maxBytes, label) {
+  const metadata = await stat(filePath);
+  if (!metadata.isFile() || metadata.size > maxBytes) {
+    throw new Error(`${label} exceeds the ${Math.floor(maxBytes / 1024)} KiB limit.`);
+  }
+  return JSON.parse(await readFile(filePath, "utf8"));
+}
+
+async function writeJsonWithinLimit(filePath, value, maxBytes, label) {
+  const serialized = JSON.stringify(value);
+  if (Buffer.byteLength(serialized, "utf8") > maxBytes) {
+    throw new Error(`${label} exceeds the ${Math.floor(maxBytes / 1024)} KiB limit.`);
+  }
+  await writeFile(filePath, serialized);
+}
+
 const [command, ...args] = process.argv.slice(2);
 if (command === "request") {
   const [planPath, model, requestPath] = args;
-  const plan = JSON.parse(await readFile(planPath, "utf8"));
-  await writeFile(requestPath, JSON.stringify(buildChatCompletionRequest(plan, model)));
+  const plan = await readJsonWithinLimit(planPath, MAX_PLAN_BYTES, "Sanitized Terraform plan");
+  await writeJsonWithinLimit(requestPath, buildChatCompletionRequest(plan, model), MAX_PLAN_BYTES + 16 * 1024, "AI request");
 } else if (command === "sanitize") {
   const [planPath, sanitizedPlanPath] = args;
-  const plan = JSON.parse(await readFile(planPath, "utf8"));
-  await writeFile(sanitizedPlanPath, JSON.stringify(sanitizePlan(plan)));
+  const plan = await readJsonWithinLimit(planPath, MAX_RAW_PLAN_BYTES, "Terraform plan");
+  await writeJsonWithinLimit(sanitizedPlanPath, sanitizePlan(plan), MAX_PLAN_BYTES, "Sanitized Terraform plan");
 } else if (command === "endpoint") {
   const [input, outputPath] = args;
   await writeFile(outputPath, JSON.stringify(await prepareChatCompletionEndpoint(input)));

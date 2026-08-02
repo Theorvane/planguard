@@ -6,7 +6,7 @@ import { spawn } from "node:child_process";
 import { test } from "node:test";
 
 const repositoryRoot = path.resolve(new URL("../../../", import.meta.url).pathname);
-const actionScript = path.join(repositoryRoot, "actions/ai-review/scripts/analyze.sh");
+const actionScript = path.join(repositoryRoot, "actions/ai-review/scripts/explain.sh");
 const sensitiveFixture = path.join(repositoryRoot, "fixtures/terraform-plans/rds-multi-az-disable.json");
 
 function run(command, args, options) {
@@ -21,32 +21,18 @@ function run(command, args, options) {
   });
 }
 
-test("posts only a sanitized plan and writes the AI explanation to the step summary", async () => {
+test("reads a sanitized-plan artifact and writes an AI explanation without Terraform", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "planguard-ai-review-"));
   const bin = path.join(directory, "bin");
-  const terraform = path.join(bin, "terraform");
   const curl = path.join(bin, "curl");
   const capturedRequest = path.join(directory, "request.json");
   const capturedCurlArgs = path.join(directory, "curl-args.txt");
   const stepSummary = path.join(directory, "summary.md");
   await mkdir(bin);
-  await writeFile(terraform, `#!/usr/bin/env bash
-set -euo pipefail
-case "$1" in
-  init|plan|show)
-    [[ -z "\${INPUT_API_KEY:-}" ]] || { echo "Terraform inherited INPUT_API_KEY" >&2; exit 91; }
-    ;;
-esac
-case "$1" in
-  init) exit 0 ;;
-  plan) for arg in "$@"; do [[ "$arg" == -out=* ]] && touch "\${arg#-out=}"; done ;;
-  show) cat "$FAKE_PLAN" ;;
-esac
-`);
   await writeFile(curl, `#!/usr/bin/env bash
 set -euo pipefail
 output=""; body=""
-printf '%s\n' "$@" > "$CAPTURED_CURL_ARGS"
+printf '%s\\n' "$@" > "$CAPTURED_CURL_ARGS"
 while (($#)); do
   case "$1" in
     --output) output="$2"; shift 2 ;;
@@ -57,7 +43,6 @@ done
 cp "$body" "$CAPTURED_REQUEST"
 printf '%s' '{"choices":[{"message":{"content":"Needs verification: review the Multi-AZ change."}}]}' > "$output"
 `);
-  await chmod(terraform, 0o755);
   await chmod(curl, 0o755);
 
   const result = await run("bash", [actionScript], {
@@ -65,12 +50,11 @@ printf '%s' '{"choices":[{"message":{"content":"Needs verification: review the M
     env: {
       ...process.env,
       PATH: `${bin}:${process.env.PATH}`,
-      INPUT_WORKING_DIRECTORY: ".",
       INPUT_API_URL: "https://api.openai.com/v1/chat/completions",
       INPUT_API_KEY: "secret-api-key-must-not-leak",
       INPUT_MODEL: "test-model",
+      INPUT_PLAN_JSON_PATH: sensitiveFixture,
       GITHUB_STEP_SUMMARY: stepSummary,
-      FAKE_PLAN: sensitiveFixture,
       CAPTURED_REQUEST: capturedRequest,
       CAPTURED_CURL_ARGS: capturedCurlArgs,
     },

@@ -34,17 +34,31 @@ from changing the connection target.
    to the repository that owns the Terraform configuration, at `.github/workflows/ai-terraform-review.yml`.
    The example pins every action to an immutable commit SHA. Keep these pins; update them only after reviewing
    the upstream release and commit SHA (Dependabot can propose the change).
-3. Configure cloud authentication in that workflow using short-lived credentials/OIDC. Terraform needs those
-   credentials to create a plan. Keep cloud credentials scoped to the minimum permissions required by the
-   Terraform configuration.
-4. Open an internal pull request and read the **PlanGuard AI explanation** in the step summary.
+3. Configure an **environment-protected, short-lived, plan-only** cloud identity in the prepare job. The
+   supplied workflow deliberately checks out only the trusted default branch and is started manually; do **not**
+   add `pull_request` or `pull_request_target` to run unreviewed Terraform with a cloud identity.
+4. Start **PlanGuard BYO-AI Terraform Review** from the Actions tab after merging/reviewing configuration changes,
+   then read the **PlanGuard AI explanation** in the step summary.
 
-## Fork and secret safety
+## Trusted-run safety
 
-The example intentionally skips pull requests from forks. GitHub does not provide repository secrets to
-forked `pull_request` workflows; changing this to `pull_request_target` would expose your model API key to
-untrusted pull-request code and is unsafe. Run the workflow after review/merge or use a separate trusted
-workflow for external contributions.
+The supplied workflow is intentionally `workflow_dispatch` only and explicitly checks out the repository default
+branch. It does not run Terraform on pull-request code. A workflow that runs unreviewed Terraform alongside cloud
+credentials can leak or misuse that identity even if it has no AI API key. For pull-request feedback, use a
+credential-free sandbox/mock backend or require a maintainer-approved trusted workflow that checks out a reviewed,
+pinned commit.
+
+## Artifact and size limits
+
+The raw Terraform JSON plan is rejected before parsing above **5 MiB**. The sanitized artifact is capped at
+**512 KiB** before upload and is retained for one day. The explanation job also rejects an artifact above 512 KiB
+before parsing. These limits fail closed without printing plan data.
+
+## Secret safety
+
+The model API key is supplied only to the separate explanation job. Do not change the supplied workflow to
+`pull_request_target`, and do not expose repository secrets to workflows that check out untrusted pull-request
+code. Use a protected environment to require maintainer approval before cloud credentials are issued.
 
 ## Data sent to the model provider
 
