@@ -104,6 +104,30 @@ test("rejects malformed and oversized authenticated plan uploads", async () => {
   });
   assert.equal(malformedNested.status, 400);
 
+  const validNestedMarkers = await fetch(`${baseUrl}/analysis/terraform-plan`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      format_version: "1.2",
+      resource_changes: [{
+        address: "aws_instance.example",
+        mode: "managed",
+        type: "aws_instance",
+        name: "example",
+        provider_name: "registry.terraform.io/hashicorp/aws",
+        change: {
+          actions: ["update"],
+          before: { items: [{ secret: "before" }] },
+          after: { items: [{ secret: "after" }] },
+          before_sensitive: { items: [{ secret: true }] },
+          after_sensitive: { items: [{ secret: true }] },
+          after_unknown: { items: [{ secret: false }] },
+        },
+      }],
+    }),
+  });
+  assert.equal(validNestedMarkers.status, 200);
+
   const oversized = await fetch(`${baseUrl}/analysis/terraform-plan`, {
     method: "POST",
     headers,

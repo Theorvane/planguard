@@ -57,8 +57,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isSensitiveMarker(value: unknown): boolean {
-  return value === undefined || value === true || value === false || (isRecord(value) && Object.values(value).every(isSensitiveMarker));
+function isTerraformValueMarker(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === true ||
+    value === false ||
+    (Array.isArray(value) && value.every(isTerraformValueMarker)) ||
+    (isRecord(value) && Object.values(value).every(isTerraformValueMarker))
+  );
 }
 
 function isNullableRecord(value: unknown): boolean {
@@ -78,9 +84,9 @@ function isTerraformResourceChange(value: unknown): boolean {
     Array.isArray(actions) && actions.length > 0 && actions.every((action) => typeof action === "string" && validActions.has(action)) &&
     isNullableRecord(value.change.before) &&
     isNullableRecord(value.change.after) &&
-    (value.change.after_unknown === undefined || isRecord(value.change.after_unknown)) &&
-    isSensitiveMarker(value.change.before_sensitive) &&
-    isSensitiveMarker(value.change.after_sensitive)
+    (value.change.after_unknown === undefined || isTerraformValueMarker(value.change.after_unknown)) &&
+    isTerraformValueMarker(value.change.before_sensitive) &&
+    isTerraformValueMarker(value.change.after_sensitive)
   );
 }
 
