@@ -1,7 +1,7 @@
 # PlanGuard Terraform Analysis Action
 
-A composite GitHub Action that creates a Terraform plan **inside your CI runner**, sends only
-`terraform show -json` output to PlanGuard, and turns the deterministic risk verdict into a job result.
+A composite GitHub Action that creates a Terraform plan **inside your CI runner**, removes Terraform-marked
+sensitive values, sends only the sanitized `terraform show -json` representation to PlanGuard, and turns the deterministic risk verdict into a job result.
 
 PlanGuard never receives Terraform state, the binary plan file, or provider credentials. Terraform still
 uses the runner's configured backend and cloud authentication.

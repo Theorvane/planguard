@@ -53,20 +53,45 @@ function hasBearerToken(authorization: string | undefined, expectedToken: string
   return received.length === expected.length && timingSafeEqual(received, expected);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isSensitiveMarker(value: unknown): boolean {
+  return value === undefined || value === true || value === false || (isRecord(value) && Object.values(value).every(isSensitiveMarker));
+}
+
+function isNullableRecord(value: unknown): boolean {
+  return value === null || isRecord(value);
+}
+
+function isTerraformResourceChange(value: unknown): boolean {
+  if (!isRecord(value) || !isRecord(value.change)) return false;
+  const actions = value.change.actions;
+  const validActions = new Set(["no-op", "create", "read", "update", "delete"]);
+  return (
+    typeof value.address === "string" &&
+    (value.mode === "managed" || value.mode === "data") &&
+    typeof value.type === "string" &&
+    typeof value.name === "string" &&
+    typeof value.provider_name === "string" &&
+    Array.isArray(actions) && actions.length > 0 && actions.every((action) => typeof action === "string" && validActions.has(action)) &&
+    isNullableRecord(value.change.before) &&
+    isNullableRecord(value.change.after) &&
+    (value.change.after_unknown === undefined || isRecord(value.change.after_unknown)) &&
+    isSensitiveMarker(value.change.before_sensitive) &&
+    isSensitiveMarker(value.change.after_sensitive)
+  );
+}
+
 function parseTerraformPlanBody(body: string): TerraformPlanJson | undefined {
   try {
     const value: unknown = JSON.parse(body);
-    if (
-      value === null ||
-      typeof value !== "object" ||
-      typeof (value as { format_version?: unknown }).format_version !== "string"
-    ) {
+    if (!isRecord(value) || typeof value.format_version !== "string") return undefined;
+    if (value.resource_changes !== undefined && (!Array.isArray(value.resource_changes) || !value.resource_changes.every(isTerraformResourceChange))) {
       return undefined;
     }
-
-    const resourceChanges = (value as { resource_changes?: unknown }).resource_changes;
-    if (resourceChanges !== undefined && !Array.isArray(resourceChanges)) return undefined;
-    return value as TerraformPlanJson;
+    return value as unknown as TerraformPlanJson;
   } catch {
     return undefined;
   }
@@ -105,7 +130,9 @@ async function route(
 
   if (request.method === "POST" && url === "/analysis/terraform-plan") {
     if (!hasBearerToken(header(request, "authorization"), deps.planUploadToken)) {
+      response.setHeader("connection", "close");
       send(response, 401, { message: "Unauthorized." });
+      request.destroy();
       return;
     }
 

@@ -97,6 +97,13 @@ test("rejects malformed and oversized authenticated plan uploads", async () => {
   });
   assert.equal(malformed.status, 400);
 
+  const malformedNested = await fetch(`${baseUrl}/analysis/terraform-plan`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ format_version: "1.2", resource_changes: [{}] }),
+  });
+  assert.equal(malformedNested.status, 400);
+
   const oversized = await fetch(`${baseUrl}/analysis/terraform-plan`, {
     method: "POST",
     headers,
