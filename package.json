@@ -17,7 +17,7 @@
     "test": "npm run test:build-chain && npm run test:action && npm run test --workspaces --if-present",
     "harness": "npm run build && node dist/.agents/harness.js",
     "test:build-chain": "node --test test/build-chain.test.mjs",
-    "test:action": "node --test actions/analyze/test/*.test.mjs"
+    "test:action": "node --test actions/*/test/*.test.mjs"
   },
   "dependencies": {
     "@langchain/anthropic": "^1.5.2",
