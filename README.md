@@ -3,6 +3,7 @@
 > Review Terraform changes safely in GitHub Actions, with an optional explanation from your own AI provider.
 
 [![Release](https://img.shields.io/github/v/release/Theorvane/planguard?display_name=tag&sort=semver)](https://github.com/Theorvane/planguard/releases/latest)
+[![License](https://img.shields.io/github/license/Theorvane/planguard)](LICENSE)
 
 PlanGuard is a GitHub Actions tool for reviewing Terraform plans. It runs in your repository's GitHub runner; it does not require a hosted PlanGuard service, Render deployment, or GitHub App. AI explanations are optional, and the provider API key is supplied only from your GitHub Actions secrets.
 
@@ -179,6 +180,7 @@ OpenAI-compatible endpoints currently require a public IPv4 DNS answer for an HT
 - [Release: v1.0.0](https://github.com/Theorvane/planguard/releases/tag/v1.0.0)
 - [Complete workflow example](examples/workflows/ai-terraform-review.yml)
 - [Marketplace publishing and release operations](docs/marketplace/README.md)
+- [Contributing](CONTRIBUTING.md), [security policy](SECURITY.md), [support](SUPPORT.md), and [governance](GOVERNANCE.md)
 - [Product plan](docs/PRODUCT_PLAN.md) (Korean)
 - [Developer and agent guidance](AGENTS.md)
 
