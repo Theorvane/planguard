@@ -22,7 +22,7 @@ This Code applies in all PlanGuard project spaces and when an individual officia
 
 ## Enforcement
 
-Do not post sensitive Code of Conduct reports in public issues. A private reporting contact has not been published yet; maintainers must publish and monitor one before representing it as an externally enforceable reporting channel. Maintainers may take corrective action ranging from a warning to a temporary or permanent ban.
+Do not post sensitive Code of Conduct reports in public issues. If you need a confidential conversation, contact a Theorvane organization owner through their GitHub profile and state that the matter concerns conduct; do not use the security vulnerability form for non-security reports. Maintainers may take corrective action ranging from a warning to a temporary or permanent ban.
 
 ## Attribution
 

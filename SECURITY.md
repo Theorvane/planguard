@@ -8,7 +8,9 @@ Security fixes are applied to the current `main` release line. When reporting a 
 
 **Do not open a public GitHub issue for a suspected vulnerability.** Do not include API keys, private keys, Terraform state, raw sensitive plan data, private endpoints, customer data, or exploit details in public issues, pull requests, workflow logs, or discussions.
 
-Private vulnerability reporting is not configured for this repository yet. Until Theorvane enables GitHub's **Report a vulnerability** control or publishes a monitored private contact, there is no supported channel for sensitive disclosure. Do not disclose sensitive details publicly.
+Use GitHub's [private vulnerability reporting](https://github.com/Theorvane/planguard/security/advisories/new) form for this repository. It is visible to repository maintainers and is the supported channel for sensitive disclosure. Include the affected release tag or commit, a minimal safe reproduction, impact, and remediation ideas if available. Do not attach live credentials or customer data.
+
+Maintainers will acknowledge a valid report, triage the impact, coordinate a fix and disclosure timing with the reporter, and credit the reporter only with their permission.
 
 ## Scope
 
