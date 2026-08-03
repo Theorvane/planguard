@@ -175,7 +175,11 @@ The PlanGuard AI explanation **does not decide approval, deployment, risk score,
 
 OpenAI-compatible endpoints currently require a public IPv4 DNS answer for an HTTPS hostname. IPv6-only endpoints are not supported.
 
-## References
+## Contributing workflow
+
+Community contributions target the protected `dev` integration branch. Stable releases are promoted from the repository-owned `dev` branch to release-only `main` through a separate reviewed pull request. See [Contributing](CONTRIBUTING.md) and [Governance](GOVERNANCE.md) for the full workflow.
+
+## Documentation
 
 - [Release: v1.0.0](https://github.com/Theorvane/planguard/releases/tag/v1.0.0)
 - [Complete workflow example](examples/workflows/ai-terraform-review.yml)
