@@ -1,5 +1,9 @@
 # PlanGuard
 
+<p align="center">
+  <img src="assets/planguard-icon.png" width="180" alt="PlanGuard midnight shield icon" />
+</p>
+
 > Review Terraform changes safely in GitHub Actions, with an optional explanation from your own AI provider.
 
 [![Release](https://img.shields.io/github/v/release/Theorvane/planguard?display_name=tag&sort=semver)](https://github.com/Theorvane/planguard/releases/latest)
