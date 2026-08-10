@@ -20,7 +20,7 @@
     "test:action": "node --test actions/*/test/*.test.mjs"
   },
   "dependencies": {
-    "@langchain/anthropic": "^1.5.2",
+    "@langchain/anthropic": "^1.5.4",
     "@langchain/core": "^1.2.4",
     "@planguard/schemas": "*",
     "@theorvane/type-chain": "^0.1.1",
